@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oyun Oynanıyor...</title>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+        iframe { width: 100%; height: 100%; border: none; display: block; }
+    </style>
+</head>
+<body>
+    <iframe id="gameFrame"></iframe>
+
+    <script>
+        // URL'den hangi oyunun açılacağını al (Örn: oyna.html?g=blokdunya.html)
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameUrl = urlParams.get('g');
+        
+        if (gameUrl) {
+            const iframe = document.getElementById('gameFrame');
+            iframe.src = gameUrl;
+
+            // Oyun (iframe) yüklendiğinde içine müdahale et
+            iframe.onload = function() {
+                try {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    
+                    // 1. Çift tıklamayı engelle
+                    doc.addEventListener('dblclick', function(e) {
+                        e.preventDefault();
+                    }, { passive: false });
+
+                    // 2. Safari'nin kendi büyütme hareketini engelle
+                    doc.addEventListener('gesturestart', function(e) {
+                        e.preventDefault();
+                    });
+
+                    // 3. Dokunmatik ekranda çift dokunmayı engelle (oyun tıklamalarını bozmadan)
+                    let lastTouch = 0;
+                    doc.addEventListener('touchend', function(e) {
+                        const now = Date.now();
+                        if (now - lastTouch <= 300) {
+                            e.preventDefault(); // Sadece ekranı büyütmeyi iptal eder, oyuna dokunmayı engellemez
+                        }
+                        lastTouch = now;
+                    }, { passive: false });
+                    
+                } catch (e) {
+                    console.log("Güvenlik nedeniyle müdahale edilemedi, ancak oyun çalışmaya devam edecek.");
+                }
+            };
+        } else {
+            // Eğer oyun seçilmeden gelinirse ana sayfaya at
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
