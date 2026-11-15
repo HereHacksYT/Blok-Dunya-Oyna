@@ -38,3 +38,4 @@ Proje tamamen statik HTML, CSS ve JavaScript kullanılarak geliştirilmiştir. G
 ├── blokdunya.jpg                  # 1. Oyunun kapak görseli
 ├── blokdunyamodayiharitasi.jpg    # 2. Oyunun kapak görseli
 └── README.md                      # Bu dosya
+© 2026 Blok Dünya Oyna. Tüm hakları saklıdır.
