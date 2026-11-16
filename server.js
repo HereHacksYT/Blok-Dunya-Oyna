@@ -2,18 +2,49 @@
 const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
 const PORT = process.env.PORT || 3000, MAX = 4;
-const HTML = path.join(__dirname, 'blokdunya_online.html');
-const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789';           // karışan harfler (O,0,I,1,L) yok
 
+const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789'; // karışan harfler (O,0,I,1,L) yok
+
+// --- WEB SUNUCUSU (HTML ve RESİMLERİ GÖSTEREN KISIM) ---
 const srv = http.createServer((q, r) => {
   if (q.url.startsWith('/saglik')) return r.end('ok');
-  fs.stat(HTML, (e, s) => {
-    if (e) { r.writeHead(500); return r.end('blokdunya_online.html bu klasörde olmalı'); }
-    r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': s.size });
-    fs.createReadStream(HTML).pipe(r);
+
+  // İstek atılan dosya yolunu belirle (Örn: /index.html, /blokdunya.jpg veya /)
+  let filePath = path.join(__dirname, q.url === '/' ? 'index.html' : q.url);
+  
+  // Eğer uzantısız bir istek gelirse (örneğin /blokdunya) ana sayfaya yönlendir
+  if (!path.extname(filePath)) filePath = path.join(__dirname, 'index.html');
+
+  fs.stat(filePath, (e, s) => {
+    if (e) { 
+      // Dosya bulunamazsa ana sayfayı (index.html) gönder
+      filePath = path.join(__dirname, 'index.html');
+      return fs.stat(filePath, (err, stat) => {
+        if (err) { r.writeHead(404); return r.end('Dosya bulunamadı'); }
+        serveFile(r, filePath, stat.size);
+      });
+    }
+    serveFile(r, filePath, s.size);
   });
 });
 
+// Dosya türüne göre Content-Type belirleyip gönderen yardımcı fonksiyon
+function serveFile(res, filePath, size) {
+  const ext = path.extname(filePath);
+  const mimes = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png'
+  };
+  const type = mimes[ext] || 'application/octet-stream';
+  res.writeHead(200, { 'Content-Type': type, 'Content-Length': size });
+  fs.createReadStream(filePath).pipe(res);
+}
+
+// --- ONLINE (WEBSOCKET) KISMI (BURAYA HİÇ DOKUNMADIK) ---
 const wss = new WebSocketServer({ server: srv }), rooms = new Map();
 let nid = 1;
 const newCode = () => { let c; do c = Array.from({ length: 4 }, () => AB[Math.random() * AB.length | 0]).join(''); while (rooms.has(c)); return c; };
@@ -31,7 +62,7 @@ wss.on('connection', w => {
     const r = room; room = null;
     r.p.delete(me.id);
     if (!r.p.size) return rooms.delete(r.c);
-    if (r.host === me.id) r.host = r.p.keys().next().value;     // kurucu çıkarsa sıradaki kurucu olur
+    if (r.host === me.id) r.host = r.p.keys().next().value;
     all(r, { t: 'left', id: me.id });
     all(r, { t: 'players', l: list(r) });
   };
@@ -66,4 +97,4 @@ wss.on('connection', w => {
 });
 
 setInterval(() => wss.clients.forEach(w => { if (!w.alive) return w.terminate(); w.alive = false; w.ping(); }), 15000);
-srv.listen(PORT, () => console.log('Blokdünya Online hazır → http://localhost:' + PORT));
+srv.listen(PORT, () => console.log('Blokdünya Online hazır → Port: ' + PORT));
