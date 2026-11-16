@@ -2,47 +2,56 @@
 const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
 const PORT = process.env.PORT || 3000, MAX = 4;
+const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789'; // karışan harfler yok
 
-const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789'; // karışan harfler (O,0,I,1,L) yok
+// --- WEB SUNUCUSU (HTML, JPG, CSS DOSYALARINI SUNAN KISIM) ---
+const srv = http.createServer((req, res) => {
+  // Sağlık kontrolü
+  if (req.url.startsWith('/saglik')) return res.end('ok');
 
-// --- WEB SUNUCUSU (HTML ve RESİMLERİ GÖSTEREN KISIM) ---
-const srv = http.createServer((q, r) => {
-  if (q.url.startsWith('/saglik')) return r.end('ok');
-
-  // İstek atılan dosya yolunu belirle (Örn: /index.html, /blokdunya.jpg veya /)
-  let filePath = path.join(__dirname, q.url === '/' ? 'index.html' : q.url);
+  // İstenen URL'yi al (Örn: / veya /oyna.html?g=blokdunya.html)
+  let reqUrl = req.url.split('?')[0]; // ? işaretinden sonrasını (parametreleri) temizle
   
-  // Eğer uzantısız bir istek gelirse (örneğin /blokdunya) ana sayfaya yönlendir
-  if (!path.extname(filePath)) filePath = path.join(__dirname, 'index.html');
+  // Eğer kök dizin (/) isteniyorsa index.html göster
+  let filePath = path.join(__dirname, reqUrl === '/' ? 'index.html' : reqUrl);
 
-  fs.stat(filePath, (e, s) => {
-    if (e) { 
-      // Dosya bulunamazsa ana sayfayı (index.html) gönder
-      filePath = path.join(__dirname, 'index.html');
-      return fs.stat(filePath, (err, stat) => {
-        if (err) { r.writeHead(404); return r.end('Dosya bulunamadı'); }
-        serveFile(r, filePath, stat.size);
-      });
-    }
-    serveFile(r, filePath, s.size);
-  });
-});
-
-// Dosya türüne göre Content-Type belirleyip gönderen yardımcı fonksiyon
-function serveFile(res, filePath, size) {
-  const ext = path.extname(filePath);
-  const mimes = {
+  // Dosya uzantısını bul (.html, .jpg vb.)
+  const extname = String(path.extname(filePath)).toLowerCase();
+  
+  // Tarayıcıya gönderilecek içerik türleri
+  const mimeTypes = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json',
+    '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
-    '.png': 'image/png'
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon'
   };
-  const type = mimes[ext] || 'application/octet-stream';
-  res.writeHead(200, { 'Content-Type': type, 'Content-Length': size });
-  fs.createReadStream(filePath).pipe(res);
-}
+  const contentType = mimeTypes[extname] || 'application/octet-stream';
+
+  // Dosyayı oku ve gönder
+  fs.readFile(filePath, (error, content) => {
+    if (error) {
+      // Eğer dosya bulunamazsa 404 hatası dön
+      if (error.code === 'ENOENT') {
+        res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end('<h1>404 - Dosya Bulunamadı</h1>', 'utf-8');
+      } else {
+        // Başka bir sunucu hatası varsa
+        res.writeHead(500);
+        res.end('Sunucu Hatası: ' + error.code);
+      }
+    } else {
+      // Başarılıysa dosyayı gönder
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(content, 'utf-8');
+    }
+  });
+});
 
 // --- ONLINE (WEBSOCKET) KISMI (BURAYA HİÇ DOKUNMADIK) ---
 const wss = new WebSocketServer({ server: srv }), rooms = new Map();
@@ -62,7 +71,7 @@ wss.on('connection', w => {
     const r = room; room = null;
     r.p.delete(me.id);
     if (!r.p.size) return rooms.delete(r.c);
-    if (r.host === me.id) r.host = r.p.keys().next().value;
+    if (r.host === me.id) r.host = r.p.keys().next().value;     // kurucu çıkarsa sıradaki kurucu olur
     all(r, { t: 'left', id: me.id });
     all(r, { t: 'players', l: list(r) });
   };
