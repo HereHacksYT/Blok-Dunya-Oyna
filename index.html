@@ -348,6 +348,7 @@
 
     <!-- Açılış Video Ekranı -->
     <div id="splash-screen">
+        <!-- autoplay ve muted özellikleri tarayıcının otomatik başlatmasına yardımcı olur -->
         <video id="splash-video" autoplay muted playsinline></video>
         <button id="skip-btn" aria-label="Videoyu Atla">Atla ve Gir</button>
     </div>
@@ -387,7 +388,7 @@
                     <img src="blokdunyamodayiharitasi.jpg" alt="Blok Dünya Online Önizleme" loading="lazy" decoding="async">
                 </div>
                 <div class="content">
-                    <h2>Blok Dünya: Online</h2>
+                    <h2>Blok Dünya: Online Ayı Köyü</h2>
                     <p>Arkadaşlarınla veya dünyanın dört bir yanından oyuncularla aynı haritada oyna.</p>
                     <span class="play-btn">
                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
@@ -401,7 +402,7 @@
 
     <footer>
         <div>&copy; 2026 Blok Dünya Oyna. Tüm hakları saklıdır.</div>
-        <div>Owner: <a href="https://youtube.com/@osmanburd" target="_blank" rel="noopener noreferrer">OsmanBurda</a></div>
+        <div>Owner: <a href="https://youtube.com/@osmanburda" target="_blank" rel="noopener noreferrer">OsmanBurda</a></div>
     </footer>
 
     <script>
@@ -415,13 +416,10 @@
         const skipBtn = document.getElementById('skip-btn');
 
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Kayıtlı temayı al, yoksa sistem tercihini kullan
         let currentTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
-        const splashPlayed = sessionStorage.getItem('splashPlayed');
 
-        if (splashPlayed) {
-            splashScreen.style.display = 'none';
-        }
-
+        // Temayı Uygula
         function applyTheme(theme) {
             root.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
@@ -433,19 +431,37 @@
                 iconSun.style.display = 'none';
                 iconMoon.style.display = 'block';
             }
+        }
 
-            if (!splashPlayed) {
-                splashVideo.src = theme === 'dark' ? 'darkopening.mp4' : 'whiteopening.mp4';
-                // Otomatik oynatmayı zorla
-                splashVideo.play().catch(error => {
-                    console.log("Otomatik oynatma engellendi:", error);
-                    setTimeout(closeSplash, 1500); 
+        // İlk yüklemede temayı uygula
+        applyTheme(currentTheme);
+
+        // VİDEOYU BAŞLAT (Her yenilemede çalışır)
+        function initSplash() {
+            // Videoyu temaya göre seç
+            splashVideo.src = currentTheme === 'dark' ? 'darkopening.mp4' : 'whiteopening.mp4';
+            
+            // Tarayıcıların otomatik oynatma engelini aşmak için .play() zorluyoruz
+            const playPromise = splashVideo.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    // Video başarıyla başladı
+                }).catch(error => {
+                    // Eğer tarayıcı (özellikle mobil Safari) yine de engellerse, 
+                    // ekrana tıklandığında başlatmak için bir dinleyici ekle
+                    console.log("Otomatik oynatma engellendi, tıklama bekleniyor.");
+                    splashScreen.addEventListener('click', () => {
+                        splashVideo.play();
+                    }, { once: true });
                 });
             }
         }
 
-        applyTheme(currentTheme);
+        // Videoyu hemen başlat
+        initSplash();
 
+        // Tema Butonuna Tıklama
         themeToggleBtn.addEventListener('click', () => {
             currentTheme = currentTheme === 'light' ? 'dark' : 'light';
             applyTheme(currentTheme);
@@ -454,21 +470,26 @@
         // --- AÇILIŞ EKRANI YÖNETİMİ ---
         function closeSplash() {
             splashScreen.classList.add('hidden');
-            sessionStorage.setItem('splashPlayed', 'true');
+            // Videoyu durdur ve kaynağı temizle
             splashVideo.pause();
             splashVideo.removeAttribute('src');
             splashVideo.load();
         }
 
+        // Video bittiğinde kapat
         splashVideo.addEventListener('ended', closeSplash);
+        
+        // Atla butonuna basıldığında kapat
         skipBtn.addEventListener('click', closeSplash);
         
+        // Ekrana tıklandığında kapat
         splashScreen.addEventListener('click', (e) => {
             if(e.target !== skipBtn) closeSplash();
         });
 
+        // Eğer video yüklenemezse (dosya yoksa) 1 saniye sonra kapat
         splashVideo.addEventListener('error', () => {
-            console.warn('Video yüklenemedi, geçiliyor...');
+            console.warn('Açılış videosu bulunamadı. Yönlendiriliyor...');
             setTimeout(closeSplash, 1000);
         });
 
