@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Blok Dünya Oyna | Modlu Oyunlar</title>
-    <meta name="description" content="Blok Dünya ve Blok Dünya: Ayı Haritası oyunlarını tarayıcınızdan anında oynayın. Keşfet, inşa et ve hayatta kal.">
+    <title>Blok Dünya Oyna</title>
+    <meta name="description" content="Blok Dünya ve online modu ile tarayıcınızdan anında oynayın. Keşfet, inşa et ve hayatta kal.">
     
     <!-- Google Fonts: Playfair Display & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,7 @@
 
     <style>
         :root {
-            /* Renk Sistemi */
+            /* AYDINLIK MOD (Varsayılan) */
             --bg-color: #F4F1EA;
             --surface-color: #FFFFFF;
             --text-main: #1A1A1A;
@@ -21,12 +21,15 @@
             --accent-color: #4A7C59;
             --accent-hover: #3A6346;
             --border-color: #E2DCD0;
+            --shadow-sm: 0 4px 12px rgba(26, 26, 26, 0.04);
+            --shadow-md: 0 12px 32px -8px rgba(26, 26, 26, 0.08);
+            --icon-bg: #E8E4D9;
             
             /* Tipografi */
             --font-heading: 'Playfair Display', serif;
             --font-body: 'Inter', sans-serif;
             
-            /* Boşluk Ritmi (4/8 Kuralı) */
+            /* Boşluk Ritmi */
             --space-1: 8px;
             --space-2: 16px;
             --space-3: 24px;
@@ -35,14 +38,26 @@
             --space-6: 64px;
             --space-7: 96px;
             
-            /* Derinlik ve Gölge */
+            /* Derinlik ve Yuvarlaklık */
             --radius-md: 12px;
             --radius-lg: 24px;
-            --shadow-sm: 0 4px 12px rgba(26, 26, 26, 0.04);
-            --shadow-md: 0 12px 32px -8px rgba(26, 26, 26, 0.08);
             
             /* Motion */
             --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* KARANLIK MOD */
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --surface-color: #1E1E1E;
+            --text-main: #F0F0F0;
+            --text-muted: #A0A0A0;
+            --accent-color: #67B77C;
+            --accent-hover: #559F68;
+            --border-color: #333333;
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 12px 32px -8px rgba(0, 0, 0, 0.4);
+            --icon-bg: #2A2A2A;
         }
 
         * {
@@ -58,26 +73,106 @@
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -webkit-text-size-adjust: 100%;
-            /* Çok hafif doku (noise/gradient) hissi */
-            background-image: radial-gradient(circle at top right, rgba(255,255,255,0.6) 0%, transparent 40%);
+            background-image: radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 40%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            transition: background-color 0.4s var(--ease-out), color 0.4s var(--ease-out);
         }
 
-        /* Odaklanma (Focus) Durumları */
+        /* --- SPLASH SCREEN (AÇILIŞ VİDEOSU) --- */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background-color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s var(--ease-out), visibility 0.6s var(--ease-out);
+        }
+
+        #splash-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #splash-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #skip-btn {
+            position: absolute;
+            bottom: var(--space-4);
+            right: var(--space-4);
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: background 0.3s var(--ease-out);
+            z-index: 10000;
+            min-height: 44px;
+        }
+        
+        #skip-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* --- ARAYÜZ --- */
         :focus-visible {
             outline: 2px solid var(--accent-color);
             outline-offset: 4px;
             border-radius: var(--radius-md);
         }
 
-        /* Header */
         header {
             padding: var(--space-6) var(--space-3) var(--space-5);
             text-align: center;
             max-width: 800px;
             margin: 0 auto;
+            position: relative;
+            width: 100%;
+        }
+
+        /* Tema Değiştirme Butonu */
+        #theme-toggle {
+            position: absolute;
+            top: var(--space-3);
+            right: var(--space-3);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--icon-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s var(--ease-out), transform 0.2s var(--ease-out);
+        }
+
+        #theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        #theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         h1 {
@@ -97,7 +192,6 @@
             margin: 0 auto;
         }
 
-        /* Ana İçerik */
         main {
             flex: 1;
             width: 100%;
@@ -112,7 +206,6 @@
             gap: var(--space-4);
         }
 
-        /* Oyun Kartları */
         .game-card {
             background-color: var(--surface-color);
             border: 1px solid var(--border-color);
@@ -123,7 +216,7 @@
             display: flex;
             flex-direction: column;
             box-shadow: var(--shadow-sm);
-            transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+            transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out), background-color 0.4s var(--ease-out), border-color 0.4s var(--ease-out);
             will-change: transform, box-shadow;
         }
 
@@ -174,7 +267,6 @@
             flex: 1;
         }
 
-        /* Buton Tasarımı */
         .play-btn {
             display: inline-flex;
             align-items: center;
@@ -188,7 +280,6 @@
             border-radius: 999px;
             transition: background-color 0.3s var(--ease-out), transform 0.2s var(--ease-out);
             align-self: flex-start;
-            /* Dokunmatik hedef boyutu (min 44px) */
             min-height: 44px;
         }
 
@@ -206,7 +297,6 @@
             transform: scale(0.97);
         }
 
-        /* Footer */
         footer {
             text-align: center;
             padding: var(--space-5) var(--space-3);
@@ -216,6 +306,7 @@
             display: flex;
             flex-direction: column;
             gap: var(--space-1);
+            transition: border-color 0.4s var(--ease-out);
         }
 
         footer a {
@@ -229,7 +320,7 @@
             color: var(--accent-color);
         }
 
-        /* Animasyonlu Giriş (IntersectionObserver) */
+        /* Animasyonlar */
         .reveal {
             opacity: 0;
             transform: translateY(24px);
@@ -241,28 +332,36 @@
             transform: translateY(0);
         }
 
-        /* Azaltılmış Hareket (Erişilebilirlik) */
         @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
+            *, *::before, *::after {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
                 scroll-behavior: auto !important;
             }
-            .reveal {
-                opacity: 1;
-                transform: none;
-            }
+            .reveal { opacity: 1; transform: none; }
+            #splash-screen { display: none; } /* Hareket azaltma açıksa videoyu direkt atla */
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1 class="reveal">Blok Dünya Oyna</h1>
-        <p class="reveal" style="transition-delay: 100ms;">Kendi dünyanı inşa et, keşfet ve maceraya atıl. Oynamak istediğin modu seç.</p>
+    <!-- Açılış Video Ekranı -->
+    <div id="splash-screen">
+        <video id="splash-video" autoplay muted playsinline></video>
+        <button id="skip-btn" aria-label="Videoyu Atla">Atla ve Gir</button>
+    </div>
+
+    <header class="reveal">
+        <!-- Tema Butonu -->
+        <button id="theme-toggle" aria-label="Temayı Değiştir">
+            <!-- İkonlar JS ile değişecek -->
+            <svg id="icon-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg id="icon-moon" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <h1>Blok Dünya Oyna</h1>
+        <p>Kendi dünyanı inşa et, keşfet ve maceraya atıl. Oynamak istediğin modu seç.</p>
     </header>
 
     <main>
@@ -283,14 +382,14 @@
                 </div>
             </a>
 
-            <!-- 2. Oyun -->
-            <a href="oyna.html?g=blokdunya_ayi_haritasi.html" class="game-card reveal" style="transition-delay: 300ms">
+            <!-- 2. Oyun (İsmi Güncellendi) -->
+            <a href="oyna.html?g=blokdunya_online.html" class="game-card reveal" style="transition-delay: 300ms">
                 <div class="thumb">
-                    <img src="blokdunyamodayiharitasi.jpg" alt="Blok Dünya Ayı Haritası Önizleme" loading="lazy" decoding="async">
+                    <img src="blokdunyamodayiharitasi.jpg" alt="Blok Dünya Online Önizleme" loading="lazy" decoding="async">
                 </div>
                 <div class="content">
-                    <h2>Blok Dünya: Ayı Haritası</h2>
-                    <p>Yepyeni bir harita, gizemli yaratıklar ve yeni bir macera seni bekliyor.</p>
+                    <h2>Blok Dünya: Online</h2>
+                    <p>Arkadaşlarınla veya dünyanın dört bir yanından oyuncularla aynı haritada oyna.</p>
                     <span class="play-btn">
                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
                         Oyna
@@ -306,20 +405,86 @@
         <div>Owner: <a href="https://youtube.com/@osmanburda" target="_blank" rel="noopener noreferrer">OsmanBurda</a></div>
     </footer>
 
-    <!-- Scroll Reveal Animasyonu için JS -->
     <script>
+        // --- TEMA YÖNETİMİ ---
+        const root = document.documentElement;
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const iconSun = document.getElementById('icon-sun');
+        const iconMoon = document.getElementById('icon-moon');
+        const splashVideo = document.getElementById('splash-video');
+        const splashScreen = document.getElementById('splash-screen');
+        const skipBtn = document.getElementById('skip-btn');
+
+        // Sistem tercihini al
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Kayıtlı temayı al veya sistem tercihini kullan
+        let currentTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+
+        function applyTheme(theme) {
+            root.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            
+            // İkonları değiştir
+            if (theme === 'dark') {
+                iconSun.style.display = 'block';
+                iconMoon.style.display = 'none';
+            } else {
+                iconSun.style.display = 'none';
+                iconMoon.style.display = 'block';
+            }
+
+            // VİDEO KAYNAĞINI TEMAYA GÖRE BELİRLE (Eğer daha önce oynatılmadıysa)
+            if (!sessionStorage.getItem('splashPlayed')) {
+                splashVideo.src = theme === 'dark' ? 'darkopening.mp4' : 'whiteopening.mp4';
+            }
+        }
+
+        // İlk tema uygulaması
+        applyTheme(currentTheme);
+
+        // Tema Butonuna Tıklama
+        themeToggleBtn.addEventListener('click', () => {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(currentTheme);
+        });
+
+        // --- AÇILIŞ EKRANI (SPLASH SCREEN) YÖNETİMİ ---
+        function closeSplash() {
+            splashScreen.classList.add('hidden');
+            sessionStorage.setItem('splashPlayed', 'true');
+            // Videoyu durdur ve kaynağını temizle (bellek tasarrufu)
+            splashVideo.pause();
+            splashVideo.removeAttribute('src');
+            splashVideo.load();
+        }
+
+        // Video bittiğinde kapat
+        splashVideo.addEventListener('ended', closeSplash);
+        
+        // Atla butonuna basıldığında kapat
+        skipBtn.addEventListener('click', closeSplash);
+        
+        // Ekrana tıklandığında kapat
+        splashScreen.addEventListener('click', (e) => {
+            if(e.target !== skipBtn) closeSplash();
+        });
+
+        // Eğer video yüklenemezse (dosya yoksa) 2 saniye sonra otomatik kapat
+        splashVideo.addEventListener('error', () => {
+            console.warn('Açılış videosu bulunamadı. Yönlendiriliyor...');
+            setTimeout(closeSplash, 2000);
+        });
+
+        // --- SCROLL REVEAL ANİMASYONU ---
         document.addEventListener('DOMContentLoaded', () => {
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('active');
-                        observer.unobserve(entry.target); // Sadece bir kez çalışsın
+                        observer.unobserve(entry.target);
                     }
                 });
-            }, {
-                threshold: 0.1,
-                rootMargin: "0px 0px -50px 0px"
-            });
+            }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
 
             document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
         });
