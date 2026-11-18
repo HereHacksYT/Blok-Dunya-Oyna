@@ -2,7 +2,7 @@
 
 Tarayıcı üzerinden hiçbir indirme gerektirmeden oynayabileceğiniz 3D blok (voxel) oyunları merkezi. 
 
-🚀 **Hemen Oynamak İçin:** [herehacksyt.github.io/Blok-Dunya-Oyna](https://herehacksyt.github.io/Blok-Dunya-Oyna/)
+🚀 **Hemen Oynamak İçin:** [herehacksyt.github.io/Blok-Dunya-Oyna](https://blok-dunya-oyna.onrender.com/)
 
 ---
 
