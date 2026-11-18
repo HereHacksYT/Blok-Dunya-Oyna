@@ -1,187 +1,328 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Blok Dünya Oyna</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Blok Dünya Oyna | Modlu Oyunlar</title>
+    <meta name="description" content="Blok Dünya ve Blok Dünya: Ayı Haritası oyunlarını tarayıcınızdan anında oynayın. Keşfet, inşa et ve hayatta kal.">
+    
+    <!-- Google Fonts: Playfair Display & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    min-height: 100vh;
-    color: #fff;
-    padding: 40px 20px;
-    -webkit-text-size-adjust: 100%; 
-  }
+    <style>
+        :root {
+            /* Renk Sistemi */
+            --bg-color: #F4F1EA;
+            --surface-color: #FFFFFF;
+            --text-main: #1A1A1A;
+            --text-muted: #5A5A5A;
+            --accent-color: #4A7C59;
+            --accent-hover: #3A6346;
+            --border-color: #E2DCD0;
+            
+            /* Tipografi */
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Inter', sans-serif;
+            
+            /* Boşluk Ritmi (4/8 Kuralı) */
+            --space-1: 8px;
+            --space-2: 16px;
+            --space-3: 24px;
+            --space-4: 32px;
+            --space-5: 48px;
+            --space-6: 64px;
+            --space-7: 96px;
+            
+            /* Derinlik ve Gölge */
+            --radius-md: 12px;
+            --radius-lg: 24px;
+            --shadow-sm: 0 4px 12px rgba(26, 26, 26, 0.04);
+            --shadow-md: 0 12px 32px -8px rgba(26, 26, 26, 0.08);
+            
+            /* Motion */
+            --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
 
-  header {
-    text-align: center;
-    margin-bottom: 50px;
-  }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  header h1 {
-    font-size: 3rem;
-    background: linear-gradient(90deg, #00d4ff, #ff00ea);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-  }
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: 100%;
+            /* Çok hafif doku (noise/gradient) hissi */
+            background-image: radial-gradient(circle at top right, rgba(255,255,255,0.6) 0%, transparent 40%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-  header p {
-    color: #a0a0c0;
-    font-size: 1.1rem;
-  }
+        /* Odaklanma (Focus) Durumları */
+        :focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 4px;
+            border-radius: var(--radius-md);
+        }
 
-  .games-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 30px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
+        /* Header */
+        header {
+            padding: var(--space-6) var(--space-3) var(--space-5);
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
 
-  .game-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 18px;
-    overflow: hidden;
-    text-decoration: none;
-    color: #fff;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-    backdrop-filter: blur(10px);
-    display: flex;
-    flex-direction: column;
-  }
+        h1 {
+            font-family: var(--font-heading);
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.1;
+            margin-bottom: var(--space-2);
+            letter-spacing: -0.02em;
+        }
 
-  .game-card:hover {
-    transform: translateY(-8px);
-    border-color: #00d4ff;
-    box-shadow: 0 15px 40px rgba(0, 212, 255, 0.3);
-  }
+        header p {
+            font-size: clamp(1rem, 1.5vw, 1.125rem);
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 0 auto;
+        }
 
-  .game-card .thumb {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    position: relative;
-    background: #0a0a1a;
-  }
+        /* Ana İçerik */
+        main {
+            flex: 1;
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 var(--space-3) var(--space-7);
+        }
 
-  .game-card .thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.5s ease;
-    color: transparent; 
-  }
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--space-4);
+        }
 
-  .game-card:hover .thumb img {
-    transform: scale(1.08);
-  }
+        /* Oyun Kartları */
+        .game-card {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+            will-change: transform, box-shadow;
+        }
 
-  .game-card .info {
-    padding: 20px 22px 24px;
-  }
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
 
-  .game-card .info h2 {
-    font-size: 1.4rem;
-    margin-bottom: 8px;
-    color: #fff;
-  }
+        .game-card .thumb {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            position: relative;
+        }
 
-  .game-card .info p {
-    color: #9aa0b5;
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
+        .game-card .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.6s var(--ease-out);
+        }
 
-  .game-card .play-btn {
-    display: inline-block;
-    margin-top: 16px;
-    padding: 10px 22px;
-    background: linear-gradient(90deg, #00d4ff, #6a5cff);
-    border-radius: 30px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    letter-spacing: 0.5px;
-    transition: filter 0.3s ease;
-  }
+        .game-card:hover .thumb img {
+            transform: scale(1.03);
+        }
 
-  .game-card:hover .play-btn {
-    filter: brightness(1.2);
-  }
+        .game-card .content {
+            padding: var(--space-3);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
 
-  footer {
-    text-align: center;
-    margin-top: 60px;
-    color: #5a5f7a;
-    font-size: 0.9rem;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+        .game-card h2 {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            margin-bottom: var(--space-1);
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
 
-  footer a {
-    color: #00d4ff;
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.3s ease;
-  }
+        .game-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: var(--space-3);
+            flex: 1;
+        }
 
-  footer a:hover {
-    color: #ff00ea;
-    text-decoration: underline;
-  }
+        /* Buton Tasarımı */
+        .play-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-1);
+            padding: 12px 24px;
+            background-color: var(--accent-color);
+            color: #FFFFFF;
+            font-weight: 500;
+            font-size: 1rem;
+            border-radius: 999px;
+            transition: background-color 0.3s var(--ease-out), transform 0.2s var(--ease-out);
+            align-self: flex-start;
+            /* Dokunmatik hedef boyutu (min 44px) */
+            min-height: 44px;
+        }
 
-  @media (max-width: 600px) {
-    header h1 { font-size: 2rem; }
-  }
-</style>
+        .play-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .game-card:hover .play-btn {
+            background-color: var(--accent-hover);
+        }
+
+        .game-card:active .play-btn {
+            transform: scale(0.97);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: var(--space-5) var(--space-3);
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-1);
+        }
+
+        footer a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s var(--ease-out);
+        }
+
+        footer a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Animasyonlu Giriş (IntersectionObserver) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Azaltılmış Hareket (Erişilebilirlik) */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .reveal {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<header>
-  <h1>🎮 Blok Dünya Oyna</h1>
-  <p>Oynamak istediğin oyunu seç</p>
-</header>
+    <header>
+        <h1 class="reveal">Blok Dünya Oyna</h1>
+        <p class="reveal" style="transition-delay: 100ms;">Kendi dünyanı inşa et, keşfet ve maceraya atıl. Oynamak istediğin modu seç.</p>
+    </header>
 
-<main class="games-grid">
+    <main>
+        <section class="games-grid">
+            
+            <!-- 1. Oyun -->
+            <a href="oyna.html?g=blokdunya.html" class="game-card reveal" style="transition-delay: 200ms">
+                <div class="thumb">
+                    <img src="blokdunya.jpg" alt="Blok Dünya Oyunu Önizleme" loading="lazy" decoding="async">
+                </div>
+                <div class="content">
+                    <h2>Blok Dünya</h2>
+                    <p>Bloklar dünyasında keşfe çık, hayatta kal ve kendi sınırlarını aş.</p>
+                    <span class="play-btn">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
+                        Oyna
+                    </span>
+                </div>
+            </a>
 
-  <!-- 1. Oyun: Blok Dünya -->
-  <a class="game-card" href="oyna.html?g=blokdunya.html">
-    <div class="thumb">
-      <img src="blokdunya.jpg" alt="">
-    </div>
-    <div class="info">
-      <h2>Blok Dünya</h2>
-      <p>Bloklar dünyasında keşfe çık ve kendi dünyanı inşa et.</p>
-      <span class="play-btn">▶ Oyna</span>
-    </div>
-  </a>
+            <!-- 2. Oyun -->
+            <a href="oyna.html?g=blokdunya_ayi_haritasi.html" class="game-card reveal" style="transition-delay: 300ms">
+                <div class="thumb">
+                    <img src="blokdunyamodayiharitasi.jpg" alt="Blok Dünya Ayı Haritası Önizleme" loading="lazy" decoding="async">
+                </div>
+                <div class="content">
+                    <h2>Blok Dünya: Ayı Haritası</h2>
+                    <p>Yepyeni bir harita, gizemli yaratıklar ve yeni bir macera seni bekliyor.</p>
+                    <span class="play-btn">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
+                        Oyna
+                    </span>
+                </div>
+            </a>
 
-  <!-- 2. Oyun: Blok Dünya: Ayı Haritası -->
-  <a class="game-card" href="oyna.html?g=blokdunya_online.html">
-    <div class="thumb">
-      <img src="blokdunyamodayiharitasi.jpg" alt="">
-    </div>
-    <div class="info">
-      <h2>Blok Dünya: Ayı Haritası</h2>
-      <p>Ayı haritasında yeni bir maceraya atıl!</p>
-      <span class="play-btn">▶ Oyna</span>
-    </div>
-  </a>
+        </section>
+    </main>
 
-</main>
+    <footer>
+        <div>&copy; 2026 Blok Dünya Oyna. Tüm hakları saklıdır.</div>
+        <div>Owner: <a href="https://youtube.com/@osmanburda" target="_blank" rel="noopener noreferrer">OsmanBurda</a></div>
+    </footer>
 
-<footer>
-  <div>© 2026 Blok Dünya Oyna</div>
-  <div>Owner: <a href="https://youtube.com/@osmanburd" target="_blank" rel="noopener noreferrer">OsmanBurda</a></div>
-</footer>
+    <!-- Scroll Reveal Animasyonu için JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target); // Sadece bir kez çalışsın
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: "0px 0px -50px 0px"
+            });
 
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        });
+    </script>
 </body>
 </html>
