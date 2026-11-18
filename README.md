@@ -22,7 +22,7 @@ Sitede şu an oynanabilir 2 farklı mod bulunmaktadır:
 
 ## 👤 Geliştirici & Sahip
 
-*   **Owner:** [OsmanBurda](https://youtube.com/@osmanburd)
+*   **Owner:** [OsmanBurda](https://youtube.com/@osmanburda)
 *   Oyunlar ve projeler hakkında daha fazla içerik için YouTube kanalına göz atabilirsiniz.
 
 ## 🛠️ Dosya Yapısı
