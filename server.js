@@ -4,7 +4,7 @@ const { WebSocketServer } = require('ws');
 const PORT = process.env.PORT || 3000, MAX = 4;
 const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789'; // karışan harfler yok
 
-// --- WEB SUNUCUSU (HTML, JPG, CSS DOSYALARINI SUNAN KISIM) ---
+// --- WEB SUNUCUSU (HTML, JPG, MP4 DOSYALARINI SUNAN KISIM) ---
 const srv = http.createServer((req, res) => {
   // Sağlık kontrolü
   if (req.url.startsWith('/saglik')) return res.end('ok');
@@ -15,7 +15,7 @@ const srv = http.createServer((req, res) => {
   // Eğer kök dizin (/) isteniyorsa index.html göster
   let filePath = path.join(__dirname, reqUrl === '/' ? 'index.html' : reqUrl);
 
-  // Dosya uzantısını bul (.html, .jpg vb.)
+  // Dosya uzantısını bul (.html, .jpg, .mp4 vb.)
   const extname = String(path.extname(filePath)).toLowerCase();
   
   // Tarayıcıya gönderilecek içerik türleri
@@ -29,7 +29,8 @@ const srv = http.createServer((req, res) => {
     '.jpeg': 'image/jpeg',
     '.gif': 'image/gif',
     '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon'
+    '.ico': 'image/x-icon',
+    '.mp4': 'video/mp4' // <--- VİDEO DESTEĞİ EKLENDİ
   };
   const contentType = mimeTypes[extname] || 'application/octet-stream';
 
