@@ -1,294 +1,674 @@
-<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>Bedrock Kutu – Yayın Oyunu</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&display=swap" rel="stylesheet">
-<style>
-html,body{margin:0;height:100%;overflow:hidden;background:#0b1220;color:#fff;font-family:Nunito,system-ui,sans-serif}
-canvas{display:block;touch-action:none}
-.g{position:fixed;padding:10px 14px;border-radius:14px;background:rgba(20,28,40,.5);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(12px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
-.c{padding:26px 36px;border-radius:20px;background:rgba(20,28,40,.6);border:1px solid rgba(255,255,255,.25);line-height:1.7;font-size:16px}
-.bar{height:14px;border-radius:7px;background:rgba(0,0,0,.45);overflow:hidden}
-#hp,#fb{display:block;height:100%;transition:width .2s}
-#hp{width:100%;background:linear-gradient(#e24d3a,#b02a1c)}#fb{width:0;background:linear-gradient(#6cc04a,#3f7f26)}
-#hud{left:14px;top:14px;width:220px}#st{margin-top:6px;font-weight:800;font-size:14px}
-#fill{left:50%;top:14px;transform:translateX(-50%);width:260px;text-align:center;font-weight:800;font-size:14px}#fill .bar{margin-top:6px}
-#cd{position:fixed;left:0;right:0;top:18%;text-align:center;font-size:120px;font-weight:800;line-height:1;text-shadow:0 6px 0 rgba(0,0,0,.5);pointer-events:none}
-#cd small{display:block;font-size:28px;margin-top:6px}
-#xh{position:fixed;left:50%;top:50%;width:18px;height:18px;margin:-9px;pointer-events:none;mix-blend-mode:difference}
-#xh:before,#xh:after{content:"";position:absolute;background:#fff}#xh:before{left:8px;top:0;width:2px;height:18px}#xh:after{top:8px;left:0;height:2px;width:18px}
-#side{position:fixed;right:14px;top:14px;width:260px}
-#top{position:static;margin-bottom:8px;font-size:14px;font-weight:800}
-.f{position:static;margin-bottom:6px;padding:6px 12px;font-size:14px;animation:in .3s both}
-@keyframes in{from{opacity:0;transform:translateX(30px)}}
-#help{left:50%;bottom:14px;transform:translateX(-50%);font-weight:800;font-size:16px;white-space:nowrap}
-#help b,.c b{background:rgba(255,255,255,.18);border-radius:6px;padding:1px 8px;margin:0 3px}
-#net{left:14px;bottom:14px;font-size:12px;display:flex;gap:8px;align-items:center}
-#dot{width:10px;height:10px;border-radius:50%;background:#c0392b}#dot.ok{background:#4caf50}
-#dead{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:800;text-align:center;text-shadow:0 4px 0 rgba(0,0,0,.5);background:rgba(120,0,0,.35);opacity:0;pointer-events:none;transition:opacity .4s}
-#dead.on{opacity:1}#dead.win{background:rgba(20,110,30,.35)}
-#start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);z-index:5;text-align:center;cursor:pointer}
-#start.off{display:none}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yakında...</title>
+  <meta name="description" content="Yeni dünyamız tuğla tuğla inşa ediliyor. Yakında...">
+  <meta name="theme-color" content="#F4EFE6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#161412" media="(prefers-color-scheme: dark)">
 
-/* ---- mobil dokunmatik kontroller ---- */
-#joy,#tbtns{display:none}
-body.touch #joy{display:block;position:fixed;left:18px;bottom:18px;width:130px;height:130px;
-  border-radius:50%;background:rgba(20,28,40,.5);border:1px solid rgba(255,255,255,.25);
-  backdrop-filter:blur(12px);touch-action:none;z-index:4}
-#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px;border-radius:50%;
-  background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.55);pointer-events:none}
-body.touch #tbtns{display:flex;flex-direction:column;gap:10px;position:fixed;right:18px;bottom:18px;touch-action:none;z-index:4}
-#tbtns button{width:64px;height:64px;border-radius:50%;border:1px solid rgba(255,255,255,.35);
-  background:rgba(20,28,40,.6);color:#fff;font-size:24px;font-weight:800;backdrop-filter:blur(12px);
-  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none}
-#tbtns button:active{background:rgba(255,255,255,.3)}
-body.touch #help{display:none}
-body.touch #start{cursor:default}
-</style></head><body>
-<div class="g" id="hud"><div class="bar"><i id="hp"></i></div><div id="st"></div></div>
-<div class="g" id="fill"><span id="ft"></span><div class="bar"><i id="fb"></i></div></div>
-<div id="side"><div class="g" id="top">🏆 Sohbete yaz!</div><div id="feed"></div></div>
-<div class="g" id="help">Sohbete yaz: <b>tnt</b><b>mega</b><b>creeper</b><b>lav</b><b>ors</b></div>
-<div class="g" id="net"><span id="dot"></span><span id="nt">Bağlanıyor…</span></div>
-<div id="xh"></div><div id="cd"></div><div id="dead"></div>
-<div id="joy"><div id="knob"></div></div>
-<div id="tbtns">
-  <button id="tjump" type="button">⬆</button>
-  <button id="tplace" type="button">🧱</button>
-  <button id="tbreak" type="button">⛏</button>
-</div>
-<div id="start"><div class="c"><h2 style="margin:0 0 6px;font-size:34px">🧱 Bedrock Kutu</h2>
-Zemini (<span id="sz"></span>) bloklarla doldur ve <b>5 saniye</b> boyunca koru!<br>Sohbet TNT yağdırıp bozmaya çalışacak.<br><br>
-<b>WASD</b> yürü · <b>Boşluk</b> zıpla · <b>Sol tık</b> kır · <b>Sağ tık</b> blok koy<br><b>Esc</b> duraklat · <b>1-5</b> test komutları<br><br>
-<span style="font-size:20px;font-weight:800">▶ Başlamak için tıkla</span></div></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-const T=THREE,$=i=>document.getElementById(i),rnd=Math.random,NB=8,H=8,G=-22; // NB = zemin boyutu (NB×NB), H = kutu yüksekliği
-let hp=20,deaths=0,pts=0,t0=performance.now(),dead=0,killer='',shake=0,lv=0,lvBy='',AC,BUF,locked=0,hold=0,fc=0,dirty=1,act=0,yaw=0,pitch=0,ground=0,tgt=null,mt=0;
-$('sz').textContent=NB+'×'+NB;
-const R=new T.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,1.5));R.setSize(innerWidth,innerHeight);
-R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;document.body.prepend(R.domElement);
-const S=new T.Scene(),C=new T.PerspectiveCamera(75,innerWidth/innerHeight,.05,60);C.rotation.order='YXZ';S.background=new T.Color(0x0b1220);
-addEventListener('resize',()=>{R.setSize(innerWidth,innerHeight);C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix()});
+  <!-- Open Graph / Sosyal Medya Etiketleri -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Yakında...">
+  <meta property="og:description" content="Yeni dünyamız tuğla tuğla inşa ediliyor.">
 
-// ---- prosedürel dokular
-function tex(draw,rep){const c=document.createElement('canvas');c.width=c.height=64;draw(c.getContext('2d'));const t=new T.CanvasTexture(c);t.magFilter=T.NearestFilter;if(rep){t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rep,rep)}return t}
-function noise(g,b,v){for(let y=0;y<64;y+=8)for(let x=0;x<64;x+=8){const k=rnd()*v;g.fillStyle=`rgb(${b[0]+k|0},${b[1]+k|0},${b[2]+k|0})`;g.fillRect(x,y,8,8)}}
-const std=o=>new T.MeshStandardMaterial(o);
+  <!-- Inline SVG Favicon (Tuğla & Kalkan Motifi) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='7' width='11' height='7' rx='1.5' fill='%23B85232'/%3E%3Crect x='17' y='7' width='11' height='7' rx='1.5' fill='%23C98A2C'/%3E%3Crect x='9' y='17' width='14' height='8' rx='1.5' fill='%23B85232'/%3E%3C/svg%3E">
 
-// ---- bedrock kutu + ışık
-const room=new T.Mesh(new T.BoxGeometry(NB,H,NB),std({map:tex(g=>noise(g,[38,38,42],60),NB),side:T.BackSide,roughness:.95}));
-room.position.set(NB/2,H/2,NB/2);room.receiveShadow=true;S.add(room);
-S.add(new T.HemisphereLight(0xcfe0ff,0x555560,.9));
-const sun=new T.DirectionalLight(0xfff0d8,1.1);sun.position.set(2.5,H-.4,5.5);sun.target.position.set(NB/2,0,NB/2);S.add(sun,sun.target);
-sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:.5,far:20});sun.shadow.bias=-.0006;
-const flash=new T.PointLight(0xffa040,0,14);S.add(flash);
+  <!-- Google Fonts: Instrument Serif & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
-// ---- malzemeler
-const tntM=std({roughness:.8,map:tex(g=>{noise(g,[185,30,28],40);g.fillStyle='#e6dfcc';g.fillRect(0,22,64,20);g.fillStyle='#222';g.font='bold 18px sans-serif';g.textAlign='center';g.fillText('TNT',32,38)})});
-const crM=std({roughness:.9,map:tex(g=>{noise(g,[55,150,50],60);g.fillStyle='#111';[[12,16,12,12],[40,16,12,12],[26,30,12,14],[18,40,8,16],[38,40,8,16]].forEach(r=>g.fillRect(...r))})});
-const anM=std({color:0x3a3d44,metalness:.85,roughness:.35});
-const gB=new T.BoxGeometry(1,1,1),gC=new T.BoxGeometry(.8,1.6,.8),gA=new T.BoxGeometry(1,.6,1);
-const lava=new T.Mesh(new T.PlaneGeometry(NB,NB),std({map:tex(g=>noise(g,[200,70,0],80),6),emissive:0xd84a00,emissiveIntensity:.55,roughness:.6}));
-lava.rotation.x=-Math.PI/2;lava.position.set(NB/2,0,NB/2);lava.visible=false;S.add(lava);
+  <style>
+    /* ==========================================================================
+       1. TASARIM SİSTEMİ & RENK DEĞİŞKENLERİ (:root)
+       ========================================================================== */
+    :root {
+      /* Doğal Taş & Sıcak Parşömen Paleti (Aydınlık Mod) */
+      --bg-base: #F4EFE6;
+      --surface: #EAE2D3;
+      --accent: #B85232;
+      --amber: #C98A2C;
 
-// ---- blok dünyası (voksel ızgarası)
-const grid=new Uint8Array(NB*NB*H),ix=(x,y,z)=>x+NB*(z+NB*y),inb=(x,y,z)=>x>=0&&x<NB&&z>=0&&z<NB&&y>=0&&y<H;
-const get=(x,y,z)=>inb(x,y,z)?grid[ix(x,y,z)]:0,solid=(x,y,z)=>inb(x,y,z)?grid[ix(x,y,z)]>0:true;
-const top=(x,z)=>{for(let y=H-1;y>=0;y--)if(get(x,y,z))return y+1;return 0};
-function setB(x,y,z,v){if(inb(x,y,z)){grid[ix(x,y,z)]=v;dirty=1}}
-const BL=new T.InstancedMesh(new T.BoxGeometry(1,1,1),std({map:tex(g=>noise(g,[120,82,48],45)),roughness:.95}),NB*NB*H),D2=new T.Object3D();
-BL.castShadow=BL.receiveShadow=true;BL.frustumCulled=false;S.add(BL);
-function rebuild(){let k=0;for(let y=0;y<H;y++)for(let z=0;z<NB;z++)for(let x=0;x<NB;x++)if(grid[ix(x,y,z)]){D2.position.set(x+.5,y+.5,z+.5);D2.updateMatrix();BL.setMatrixAt(k++,D2.matrix)}
-  BL.count=k;BL.instanceMatrix.needsUpdate=true;dirty=0;fc=0;for(let i=0;i<NB*NB;i++)if(grid[i])fc++} // y=0 katmanı = zemin
-const hl=new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(1.01,1.01,1.01)),new T.LineBasicMaterial({color:0x000000}));hl.visible=false;S.add(hl);
+      /* 4 Taş / Kömür Grisi Tonu */
+      --ink-primary: #1E1C19;
+      --ink-secondary: #585249;
+      --border: #D4CBB9;
+      --stone-dark: #2C2925;
 
-// ---- parçacıklar (tek InstancedMesh)
-const N=600,PI=new T.InstancedMesh(new T.BoxGeometry(.22,.22,.22),new T.MeshBasicMaterial(),N),pd=[],D=new T.Object3D();let pn=0;
-PI.frustumCulled=false;for(let i=0;i<N;i++){pd.push({p:new T.Vector3(),v:new T.Vector3(),l:0});PI.setColorAt(i,new T.Color(1,1,1))}S.add(PI);
-function puff(p,sp,col){const i=pn++%N,q=pd[i];q.p.copy(p);q.v.set(rnd()-.5,rnd()-.1,rnd()-.5).multiplyScalar(sp);q.l=.6+rnd()*.6;PI.setColorAt(i,new T.Color(col))}
+      /* İllüstrasyon & Zanaat Tonları */
+      --brick-a: #B85232;
+      --brick-b: #A14427;
+      --brick-c: #C96544;
+      --brick-crest: #D6CCBA;
+      --mortar: #DCD3C2;
+      --skin: #E0B195;
+      --tunic-slate: #313E47;
+      --tunic-canvas: #51626D;
+      --leather: #9C6F44;
+      --timber: #A5784B;
+      --iron: #635E56;
 
-// ---- ses (patlama, sağ/sol konumlu)
-function sfx(x,pw){try{AC=AC||new AudioContext();AC.resume();
-  if(!BUF){const n=AC.sampleRate*.9|0;BUF=AC.createBuffer(1,n,AC.sampleRate);const d=BUF.getChannelData(0);for(let i=0;i<n;i++)d[i]=(rnd()*2-1)*Math.pow(1-i/n,3)}
-  const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain(),pan=AC.createStereoPanner(),rel=(x-pos.x)*Math.cos(yaw);
-  s.buffer=BUF;f.type='lowpass';f.frequency.value=500+pw*300;g.gain.value=Math.min(pw*.5,1.2);pan.pan.value=Math.max(-1,Math.min(1,rel/4));
-  s.connect(f);f.connect(g);g.connect(pan);pan.connect(AC.destination);s.start()}catch(e){}}
+      /* Katmanlı Derinlik */
+      --scene-shadow:
+        0 1px 2px rgba(30, 28, 25, 0.05),
+        0 16px 40px -12px rgba(30, 28, 25, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.75);
 
-// ---- oyuncu (birinci şahıs)
-const pos=new T.Vector3(NB/2,0,NB/2),vel=new T.Vector3(),kb=new T.Vector3(),keys={},btn={};
-const hit=(px,py,pz)=>{for(let x=Math.floor(px-.3);x<=Math.floor(px+.3);x++)for(let y=Math.floor(py);y<=Math.floor(py+1.79);y++)for(let z=Math.floor(pz-.3);z<=Math.floor(pz+.3);z++)if(solid(x,y,z))return 1;return 0};
-function move(a,d){pos[a]+=d;if(!hit(pos.x,pos.y,pos.z))return;
-  if(a==='y'){if(d<0){pos.y=Math.floor(pos.y)+1;ground=1}else pos.y-=d;vel.y=0}else{pos[a]-=d;kb[a]=0}}
-function ray(){const ox=pos.x,oy=pos.y+1.62,oz=pos.z,cp=Math.cos(pitch),dx=-Math.sin(yaw)*cp,dy=Math.sin(pitch),dz=-Math.cos(yaw)*cp;
-  let x=Math.floor(ox),y=Math.floor(oy),z=Math.floor(oz),px=x,py=y,pz=z;
-  const sx=dx<0?-1:1,sy=dy<0?-1:1,sz=dz<0?-1:1,ax=Math.abs(1/dx),ay=Math.abs(1/dy),az=Math.abs(1/dz);
-  let tx=(sx>0?x+1-ox:ox-x)*ax,ty=(sy>0?y+1-oy:oy-y)*ay,tz=(sz>0?z+1-oz:oz-z)*az;
-  for(;;){
-    if(tx<ty&&tx<tz){if(tx>5)return null;x+=sx;tx+=ax}else if(ty<tz){if(ty>5)return null;y+=sy;ty+=ay}else{if(tz>5)return null;z+=sz;tz+=az}
-    if(!inb(x,y,z))return{p:[px,py,pz]};            // kutu duvarına/zeminine bakıyor
-    if(grid[ix(x,y,z)])return{b:[x,y,z],p:[px,py,pz]};
-    px=x;py=y;pz=z}}
-const ents=[];
-const canPlace=([x,y,z])=>inb(x,y,z)&&!grid[ix(x,y,z)]&&!(pos.x+.3>x&&pos.x-.3<x+1&&pos.z+.3>z&&pos.z-.3<z+1&&pos.y+1.8>y&&pos.y<y+1)
-  &&!ents.some(e=>Math.floor(e.m.position.x)===x&&Math.floor(e.m.position.y)===y&&Math.floor(e.m.position.z)===z);
-
-// ---- oyun mantığı
-function msg(t,c,ms){const d=$('dead');d.textContent=t;d.className='on '+c;clearTimeout(mt);if(ms)mt=setTimeout(()=>d.className='',ms)}
-function hurt(a,by){if(dead>0)return;hp-=a;if(by)killer=by;if(hp<=0){hp=0;dead=4;deaths++;msg('💀 '+(killer||'Biri')+' öldürdü!','',0)}}
-function wipe(){ents.splice(0).forEach(e=>S.remove(e.m));grid.fill(0);dirty=1;lv=0;hold=0;pos.set(NB/2,0,NB/2);vel.set(0,0,0);kb.set(0,0,0);t0=performance.now()}
-function reset(){wipe();hp=20;dead=0;$('dead').className=''}
-function win(){const s=(performance.now()-t0)/1000|0,p=100+Math.max(0,120-s);pts+=p;msg('⭐ +'+p+' PUAN!','win',2500);wipe()}
-const cl=v=>Math.min(NB-.5,Math.max(.5,v));
-function spawn(k,by){const e={k,by,v:new T.Vector3((rnd()-.5)*2,0,(rnd()-.5)*2),f:Infinity},r=()=>.5+rnd()*(NB-1);let m;
-  if(k==='tnt'){m=new T.Mesh(gB,tntM.clone());m.position.set(r(),H-.5,r());e.f=3+rnd()*1.2}
-  else if(k==='ors'){m=new T.Mesh(gA,anM);m.position.set(cl(pos.x+(rnd()-.5)*2),H-.3,cl(pos.z+(rnd()-.5)*2));e.v.set(0,-6,0)}
-  else{m=new T.Mesh(gC,crM.clone());const s=rnd()*4|0,u=r(),x=s===0?.5:s===1?NB-.5:u,z=s===2?.5:s===3?NB-.5:u;m.position.set(x,top(Math.floor(x),Math.floor(z))+.8,z)}
-  m.castShadow=m.receiveShadow=true;e.m=m;ents.push(e);S.add(m)}
-function boom(p,pw,by){shake=Math.min(shake+pw*.5,2.5);flash.position.copy(p);flash.intensity=pw*10;sfx(p.x,pw);
-  const cs=[0xffb000,0xff6a00,0x4a4a4a,0x222222];for(let i=0;i<26*pw;i++)puff(p,6*pw,cs[rnd()*4|0]);
-  const rad=.9+pw*.55,R2=rad*rad,cx=Math.floor(p.x),cy=Math.floor(p.y),cz=Math.floor(p.z);let n=0;
-  for(let x=cx-3;x<=cx+3;x++)for(let y=cy-3;y<=cy+3;y++)for(let z=cz-3;z<=cz+3;z++)   // blokları kır
-    if(get(x,y,z)&&(x-cx)**2+(y-cy)**2+(z-cz)**2<=R2*(.75+rnd()*.5)){setB(x,y,z,0);if(n++<14)puff(new T.Vector3(x+.5,y+.5,z+.5),4,0x7a5230)}
-  const c=new T.Vector3(pos.x,pos.y+.9,pos.z),d=c.distanceTo(p);
-  if(d<4.2){hurt((4.2-d)*pw*1.3,by);const k=c.clone().sub(p).normalize(),w=(4.2-d)*pw;kb.x+=k.x*w*1.6;kb.z+=k.z*w*1.6;vel.y+=w*.9}
-  for(const o of ents){const q=o.m.position,dd=q.distanceTo(p);if(dd<4&&dd>.01){o.v.addScaledVector(q.clone().sub(p).normalize(),(4-dd)*2.5*pw);o.v.y+=2;if(o.k==='tnt'&&o.f>.5)o.f=.25+rnd()*.35}}} // zincirleme patlama
-function land(e,cy){const p=e.m.position;setB(Math.floor(p.x),cy,Math.floor(p.z),0);   // örs altındaki bloğu ezer
-  if(Math.hypot(p.x-pos.x,p.z-pos.z)<.9&&pos.y<p.y)hurt(9,e.by);for(let i=0;i<14;i++)puff(p,5,0x777777);shake+=.5;sfx(p.x,.5)}
-
-function step(dt){
-  if(dead>0){dead-=dt;if(dead<=0){reset();return}}
-  const K=dead>0?{}:keys,f=(K.KeyW?1:0)-(K.KeyS?1:0),r=(K.KeyD?1:0)-(K.KeyA?1:0),s=Math.sin(yaw),c=Math.cos(yaw),l=Math.hypot(f,r)||1;
-  vel.y=Math.max(-25,vel.y+G*dt);kb.multiplyScalar(Math.max(0,1-5*dt));ground=0;
-  move('x',((-s*f+c*r)/l*4.3+kb.x)*dt);move('z',((-c*f-s*r)/l*4.3+kb.z)*dt);move('y',vel.y*dt);
-  if(K.Space&&ground)vel.y=7.6;
-  tgt=ray();act-=dt;
-  if(dead<=0&&act<=0&&(btn[0]||btn[2])){act=.14;if(tgt){if(btn[0]){if(tgt.b)setB(tgt.b[0],tgt.b[1],tgt.b[2],0)}else if(canPlace(tgt.p))setB(tgt.p[0],tgt.p[1],tgt.p[2],1)}}
-  if(dead<=0){hp=Math.min(20,hp+.8*dt);if(lv>pos.y+.2)hurt(5*dt,lvBy)}
-  lv=Math.max(0,lv-.1*dt);lava.visible=lv>.02;lava.position.y=lv;
-  for(let i=ents.length-1;i>=0;i--){const e=ents[i],m=e.m,p=m.position;
-    if(e.k==='creeper'){const dx=pos.x-p.x,dz=pos.z-p.z,d=Math.hypot(dx,dz)||1;
-      if(e.f===Infinity){if(Math.hypot(d,pos.y-p.y)<2.2)e.f=1.4;else{p.x=cl(p.x+dx/d*1.6*dt);p.z=cl(p.z+dz/d*1.6*dt)}}
-      p.y+=(top(Math.floor(p.x),Math.floor(p.z))+.8-p.y)*Math.min(1,10*dt);m.lookAt(pos.x,p.y,pos.z)}
-    else{const h=e.k==='ors'?.3:.5;e.v.y+=G*dt;
-      for(const a of['x','z']){const n=p[a]+e.v[a]*dt;if(solid(Math.floor(a==='x'?n:p.x),Math.floor(p.y),Math.floor(a==='z'?n:p.z)))e.v[a]*=-.4;else p[a]=n}
-      const ny=p.y+e.v.y*dt,cy=Math.floor(ny-h);
-      if(e.v.y<0&&solid(Math.floor(p.x),cy,Math.floor(p.z))){p.y=cy+1+h;if(e.k==='ors'&&!e.l){e.l=1;e.f=.5;land(e,cy)}e.v.y=(e.k==='tnt'&&e.v.y<-2)?-e.v.y*.3:0;e.v.x*=.85;e.v.z*=.85}else p.y=ny}
-    if(e.f<Infinity){e.f-=dt;
-      if(e.k!=='ors'){const on=e.f<(e.k==='tnt'?2:1.4)&&Math.floor(e.f*6)%2===0;m.material.emissive.setHex(on?0xffffff:0);if(e.k==='creeper')m.scale.setScalar(1+(1.4-e.f)*.2)}
-      if(e.f<=0){ents.splice(i,1);S.remove(m);if(e.k!=='ors')boom(p,e.k==='tnt'?1:2.2,e.by)}}}
-  if(dirty)rebuild();
-  if(fc===NB*NB&&dead<=0){hold+=dt;if(hold>=5)win()}else hold=0;   // zemin dolu → 5 sn geri sayım
-}
-
-// ---- sohbet komutları
-const ALIAS={tnt:'tnt',mega:'mega',creeper:'creeper',lav:'lav',lava:'lav',ors:'ors',örs:'ors',anvil:'ors'};
-const LBL={tnt:'💥 TNT',mega:'☄️ MEGA TNT',creeper:'🟩 Creeper',lav:'🌋 Lav',ors:'⚒ Örs'};
-const cool={},lb={};
-function cmd(user,text){if(!locked)return;user=String(user||'?').slice(0,20);
-  const k=ALIAS[String(text||'').trim().toLowerCase().split(/\s+/)[0].replace(/[!.,?]/g,'')];if(!k)return;
-  const n=performance.now();if(n-(cool[user]||0)<1000||ents.length>150)return;cool[user]=n; // kişi başı 1 sn bekleme
-  if(k==='mega')for(let i=0;i<8;i++)spawn('tnt',user);else if(k==='lav'){lv=Math.min(lv+.8,4);lvBy=user}else spawn(k,user);
-  const d=document.createElement('div'),b=document.createElement('b');d.className='g f';b.textContent=user;d.append(b,' '+LBL[k]);$('feed').prepend(d);
-  while($('feed').children.length>6)$('feed').lastChild.remove();
-  lb[user]=(lb[user]||0)+1;$('top').textContent='🏆 '+Object.entries(lb).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([a,c])=>a+' '+c).join(' · ')}
-
-// ---- kontroller
-const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
-if(isTouch) document.body.classList.add('touch');
-
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('keydown',e=>{if(isTouch)return;keys[e.code]=1;const k=['tnt','mega','creeper','lav','ors'][+e.key-1];if(k)cmd('Sen',k)});
-addEventListener('keyup',e=>{if(isTouch)return;keys[e.code]=0});
-addEventListener('mousedown',e=>{if(isTouch)return;if(locked)btn[e.button]=1});
-addEventListener('mouseup',e=>{if(isTouch)return;btn[e.button]=0});
-addEventListener('mousemove',e=>{if(isTouch)return;if(locked){yaw-=e.movementX*.0022;pitch=Math.max(-1.55,Math.min(1.55,pitch-e.movementY*.0022))}});
-
-if(!isTouch){
-  // ---- masaüstü: pointer lock
-  $('start').onclick=()=>R.domElement.requestPointerLock();
-  document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===R.domElement?1:0;$('start').classList.toggle('off',!!locked);if(!locked){btn[0]=btn[2]=0;for(const k in keys)keys[k]=0}});
-  document.addEventListener('pointerlockerror',()=>{ // fallback: kilit reddedildi → yine de oyna
-    console.warn('Pointer Lock reddedildi → fallback mod');
-    locked=1;$('start').classList.add('off');
-  });
-  document.addEventListener('pointerdown',()=>{AC=AC||new AudioContext();AC.resume()});
-} else {
-  // ---- mobil: dokunmatik
-  document.querySelector('#start .c').insertAdjacentHTML('beforeend',
-    '<br><b style="font-size:14px;opacity:.85">📱 Sol joystick yürü · sağa sürükle bak · sağdaki tuşlar: zıpla / koy / kır</b>');
-
-  $('start').onclick=e=>{
-    e.preventDefault();
-    locked=1;$('start').classList.add('off');
-    try{AC=AC||new AudioContext();AC.resume()}catch(_){}
-  };
-
-  // bakış (canvas üzerinde parmak sürükle)
-  let lookId=null,lx=0,ly=0;
-  R.domElement.addEventListener('touchstart',e=>{
-    for(const t of e.changedTouches) if(lookId===null){lookId=t.identifier;lx=t.clientX;ly=t.clientY}
-    e.preventDefault();
-  },{passive:false});
-  R.domElement.addEventListener('touchmove',e=>{
-    for(const t of e.changedTouches) if(t.identifier===lookId){
-      yaw   -= (t.clientX-lx)*0.005;
-      pitch  = Math.max(-1.55,Math.min(1.55,pitch-(t.clientY-ly)*0.005));
-      lx=t.clientX;ly=t.clientY;
+      /* Tipografi & Hareket */
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --ease-craft: cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-    e.preventDefault();
-  },{passive:false});
-  const endLook=e=>{for(const t of e.changedTouches) if(t.identifier===lookId) lookId=null};
-  R.domElement.addEventListener('touchend',endLook);
-  R.domElement.addEventListener('touchcancel',endLook);
 
-  // joystick
-  const joy=$('joy'),knob=$('knob'),RJ=52;let joyId=null,jx=0,jy=0;
-  joy.addEventListener('touchstart',e=>{
-    const t=e.changedTouches[0];joyId=t.identifier;
-    const r=joy.getBoundingClientRect();jx=r.left+r.width/2;jy=r.top+r.height/2;
-    e.preventDefault();
-  },{passive:false});
-  joy.addEventListener('touchmove',e=>{
-    for(const t of e.changedTouches) if(t.identifier===joyId){
-      let dx=t.clientX-jx,dy=t.clientY-jy,d=Math.hypot(dx,dy)||1;
-      if(d>RJ){dx=dx/d*RJ;dy=dy/d*RJ}
-      knob.style.transform=`translate(${dx}px,${dy}px)`;
-      const nx=dx/RJ,ny=dy/RJ,dz=0.2;
-      keys.KeyW=ny<-dz;keys.KeyS=ny>dz;keys.KeyA=nx<-dz;keys.KeyD=nx>dz;
+    @media (prefers-color-scheme: dark) {
+      :root {
+        /* Gece Atölyesi & Koyu Doğal Taş Modu */
+        --bg-base: #161412;
+        --surface: #1F1C19;
+        --accent: #CC6342;
+        --amber: #DDA03E;
+
+        --ink-primary: #F2EDE4;
+        --ink-secondary: #A69E91;
+        --border: #302C27;
+        --stone-dark: #100F0D;
+
+        --brick-a: #CC6342;
+        --brick-b: #B25132;
+        --brick-c: #DA7656;
+        --brick-crest: #3C3730;
+        --mortar: #474139;
+
+        --scene-shadow:
+          0 2px 6px rgba(0, 0, 0, 0.35),
+          0 20px 48px -12px rgba(0, 0, 0, 0.55),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
     }
-    e.preventDefault();
-  },{passive:false});
-  const endJoy=e=>{for(const t of e.changedTouches) if(t.identifier===joyId){
-    joyId=null;knob.style.transform='';keys.KeyW=keys.KeyA=keys.KeyS=keys.KeyD=0;
-  }};
-  joy.addEventListener('touchend',endJoy);
-  joy.addEventListener('touchcancel',endJoy);
 
-  // eylem tuşları (basılı tut = tekrarla)
-  const hold=(el,on,off)=>{
-    el.addEventListener('touchstart',e=>{on();e.preventDefault()},{passive:false});
-    el.addEventListener('touchend',e=>{off();e.preventDefault()},{passive:false});
-    el.addEventListener('touchcancel',()=>off());
-  };
-  hold($('tbreak'),()=>btn[0]=1,()=>btn[0]=0);
-  hold($('tplace'),()=>btn[2]=1,()=>btn[2]=0);
-  hold($('tjump'),()=>keys.Space=1,()=>keys.Space=0);
-}
+    /* ==========================================================================
+       2. TEMEL YERLEŞİM, DOKU & SIFIRLAMA
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-// ---- sohbet bağlantısı (SSE)
-function net(ok,t){$('dot').className=ok?'ok':'';$('nt').textContent=t}
-try{const es=new EventSource('/events');es.onopen=()=>net(1,'Sohbet bağlı');es.onerror=()=>net(0,'Sunucu yok — test: 1-5 tuşları');
-  es.onmessage=e=>{const m=JSON.parse(e.data);cmd(m.user,m.text)}}catch(e){net(0,'Sunucu yok — test: 1-5 tuşları')}
+    html, body {
+      height: 100%;
+    }
 
-// ---- döngü (sabit 60 Hz adım; kilit açıkken oyun, değilken duraklatma)
-let last=performance.now(),acc=0;
-(function loop(n){requestAnimationFrame(loop);const dt=Math.min((n-last)/1000,.1);last=n;
-  if(locked){acc+=dt;while(acc>=1/60){step(1/60);acc-=1/60}}else acc=0;
-  shake=Math.max(0,shake-dt*2.5);flash.intensity=Math.max(0,flash.intensity-dt*50);
-  C.rotation.set(pitch,yaw,(rnd()-.5)*shake*.03);C.position.set(pos.x+(rnd()-.5)*shake*.15,pos.y+1.62+(rnd()-.5)*shake*.15,pos.z+(rnd()-.5)*shake*.15);
-  hl.visible=!!(tgt&&tgt.b);if(hl.visible)hl.position.set(tgt.b[0]+.5,tgt.b[1]+.5,tgt.b[2]+.5);
-  for(let i=0;i<N;i++){const q=pd[i];if(q.l>0){q.l-=dt;q.v.y-=9*dt;q.p.addScaledVector(q.v,dt);if(q.p.y<.1){q.p.y=.1;q.v.multiplyScalar(.5)}D.position.copy(q.p);D.scale.setScalar(Math.max(q.l,0)*1.3)}else D.scale.setScalar(0);D.updateMatrix();PI.setMatrixAt(i,D.matrix)}
-  PI.instanceMatrix.needsUpdate=true;PI.instanceColor.needsUpdate=true;
-  const s=((performance.now()-t0)/1000)|0;$('hp').style.width=hp/20*100+'%';$('fb').style.width=fc/(NB*NB)*100+'%';
-  $('ft').textContent='ZEMİN '+fc+' / '+NB*NB;$('cd').innerHTML=hold>0?Math.ceil(5-hold)+'<small>TUT!</small>':'';
-  $('st').textContent=`⭐ ${pts}  ·  💀 ${deaths}  ·  ⏱ ${s/60|0}:${String(s%60).padStart(2,'0')}`;
-  R.render(S,C)})(last);
-</script></body></html>
+    body {
+      min-height: 100dvh;
+      background-color: var(--bg-base);
+      color: var(--ink-primary);
+      font-family: var(--font-sans);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      position: relative;
+      background-image:
+        radial-gradient(circle at 50% 38%, rgba(201, 138, 44, 0.08) 0%, transparent 58%),
+        radial-gradient(circle at 50% 100%, rgba(184, 82, 50, 0.06) 0%, transparent 52%);
+    }
+
+    /* Çok Hafif SVG Grain / Parşömen Dokusu */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0.032;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 6px;
+      border-radius: 18px;
+    }
+
+    /* ==========================================================================
+       3. TAM EKRAN MERKEZ KOMPOZİSYON (SADECE SAHNE + 'Yakında...')
+       ========================================================================== */
+    .stage-container {
+      width: min(92vw, 620px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(24px, 4vh, 40px);
+      padding: 16px;
+      z-index: 1;
+    }
+
+    .scene-frame {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--scene-shadow);
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: stageReveal 0.8s var(--ease-craft) forwards;
+      transition:
+        border-color 0.25s var(--ease-craft),
+        transform 0.2s var(--ease-craft);
+    }
+
+    .scene-frame:hover {
+      border-color: var(--accent);
+    }
+
+    .scene-frame:active {
+      transform: scale(0.992);
+    }
+
+    .builders-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .coming-soon-title {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-style: italic;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.015em;
+      color: var(--ink-primary);
+      text-align: center;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: stageReveal 0.8s var(--ease-craft) 0.16s forwards;
+    }
+
+    @keyframes stageReveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ==========================================================================
+       4. DUVAR ÖRME & İŞÇİ HAREKET FİZİĞİ
+       ========================================================================== */
+    .drafting-grid-stroke {
+      stroke: var(--ink-primary);
+      stroke-opacity: 0.055;
+    }
+
+    /* Tuğla Yerleşme Yaylanması */
+    .wall-brick {
+      opacity: 0;
+      transform: translateY(-18px) scale(0.92);
+      transform-box: fill-box;
+      transform-origin: center;
+      transition:
+        opacity 0.35s var(--ease-craft),
+        transform 0.52s var(--ease-craft);
+    }
+
+    .wall-brick.is-placed {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .mortar-line {
+      opacity: 0;
+      transition: opacity 0.32s var(--ease-craft);
+    }
+
+    .mortar-line.is-visible {
+      opacity: 1;
+    }
+
+    /* Vinç Arabası & Sallanan Tuğla */
+    #crane-carriage {
+      transition: transform 0.65s var(--ease-craft);
+    }
+
+    #crane-rope-group {
+      transform-box: fill-box;
+      transform-origin: 50% 0%;
+      animation: ropeSway 3.4s var(--ease-craft) infinite;
+    }
+
+    @keyframes ropeSway {
+      0%, 100% { transform: rotate(-2deg); }
+      50% { transform: rotate(2deg); }
+    }
+
+    /* Sol Usta (Mala ile Harç Süren ve Tuğla Oturtan İşçi) */
+    #worker-left-arm {
+      transform-box: fill-box;
+      transform-origin: 18% 25%;
+      animation: trowelWork 2s var(--ease-craft) infinite;
+    }
+
+    #worker-left-head {
+      transform-box: fill-box;
+      transform-origin: 50% 80%;
+      animation: headFocusLeft 2s var(--ease-craft) infinite;
+    }
+
+    @keyframes trowelWork {
+      0%, 100% { transform: rotate(0deg) translate(0, 0); }
+      35% { transform: rotate(-16deg) translate(-3px, -4px); }
+      68% { transform: rotate(13deg) translate(4px, 3px); }
+    }
+
+    @keyframes headFocusLeft {
+      0%, 100% { transform: rotate(0deg); }
+      45% { transform: rotate(5deg) translateY(1px); }
+      78% { transform: rotate(-2deg); }
+    }
+
+    /* Sağ Usta (Şakül & Su Terazisi ile Hizalayan İşçi) */
+    #worker-right-arm {
+      transform-box: fill-box;
+      transform-origin: 82% 25%;
+      animation: levelCheck 2.6s var(--ease-craft) infinite;
+    }
+
+    #worker-right-head {
+      transform-box: fill-box;
+      transform-origin: 50% 80%;
+      animation: headFocusRight 2.6s var(--ease-craft) infinite;
+    }
+
+    #plumb-bob {
+      transform-box: fill-box;
+      transform-origin: 50% 0%;
+      animation: plumbSwing 2.6s var(--ease-craft) infinite;
+    }
+
+    @keyframes levelCheck {
+      0%, 100% { transform: rotate(0deg) translate(0, 0); }
+      42% { transform: rotate(9deg) translate(-2px, -2px); }
+      76% { transform: rotate(-5deg) translate(2px, 2px); }
+    }
+
+    @keyframes headFocusRight {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-6deg) translateY(1px); }
+    }
+
+    @keyframes plumbSwing {
+      0%, 100% { transform: rotate(-3.5deg); }
+      50% { transform: rotate(3.5deg); }
+    }
+
+    /* Gizli Etkileşim: Sahneye Tıklayınca Ustalar Hızlanır */
+    .is-fast #worker-left-arm { animation-duration: 0.72s; }
+    .is-fast #worker-left-head { animation-duration: 0.72s; }
+    .is-fast #worker-right-arm { animation-duration: 0.88s; }
+    .is-fast #worker-right-head { animation-duration: 0.88s; }
+    .is-fast #crane-rope-group { animation-duration: 1.05s; }
+
+    /* Harç & Tuğla Tozu Partikülleri */
+    .dust-particle {
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .dust-particle.is-burst {
+      animation: dustRise 0.65s var(--ease-craft) forwards;
+    }
+
+    @keyframes dustRise {
+      0% { opacity: 0.88; transform: translate(0, 0) scale(0.5); }
+      100% { opacity: 0; transform: translate(var(--dx, 8px), -14px) scale(1.45); }
+    }
+
+    /* ==========================================================================
+       5. AZALTILMIŞ HAREKET (PREFERS-REDUCED-MOTION: REDUCE)
+       ========================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .scene-frame,
+      .coming-soon-title,
+      .wall-brick {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="stage-container">
+    <!-- 1. Öğe: Duvar Yapan İşçiler Vektörel Animasyon Sahnesi -->
+    <figure
+      class="scene-frame"
+      id="scene-frame"
+      role="button"
+      tabindex="0"
+      aria-label="Duvar ören ustalar animasyon sahnesi"
+    >
+      <svg
+        class="builders-svg"
+        id="builders-svg"
+        viewBox="0 0 560 420"
+        role="img"
+        aria-labelledby="svg-title svg-desc"
+      >
+        <title id="svg-title">Duvar ören iki usta işçi</title>
+        <desc id="svg-desc">Baretli ve önlüklü iki usta işçi ahşap vinç yardımıyla tuğlaları harçla örerek sağlam bir duvar inşa ediyor.</desc>
+
+        <defs>
+          <pattern id="architect-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M 28 0 L 0 0 0 28" fill="none" class="drafting-grid-stroke" stroke-width="1"/>
+          </pattern>
+        </defs>
+
+        <!-- Mimari Çizim Izgarası -->
+        <rect width="560" height="420" fill="url(#architect-grid)"/>
+
+        <!-- Arka Plan Ahşap İskele -->
+        <g stroke="var(--timber)" stroke-width="2" fill="none" opacity="0.45">
+          <line x1="64" y1="86" x2="64" y2="366"/>
+          <line x1="106" y1="86" x2="106" y2="366"/>
+          <line x1="64" y1="146" x2="106" y2="146"/>
+          <line x1="64" y1="216" x2="106" y2="216"/>
+          <line x1="64" y1="286" x2="106" y2="286"/>
+          <line x1="64" y1="146" x2="106" y2="216"/>
+          <line x1="106" y1="216" x2="64" y2="286"/>
+        </g>
+
+        <!-- Üst Ahşap Vinç Kirişi & Makara Sistemi -->
+        <g id="crane-rig">
+          <rect x="44" y="34" width="472" height="12" rx="3" fill="var(--timber)"/>
+          <rect x="44" y="34" width="472" height="4" rx="2" fill="#BE9263" opacity="0.55"/>
+          <rect x="68" y="46" width="12" height="40" rx="2" fill="var(--timber)"/>
+          <rect x="480" y="46" width="12" height="40" rx="2" fill="var(--timber)"/>
+
+          <g id="crane-carriage" transform="translate(278, 0)">
+            <rect x="-18" y="30" width="36" height="20" rx="4" fill="var(--iron)"/>
+            <circle cx="-10" cy="40" r="3" fill="var(--amber)"/>
+            <circle cx="10" cy="40" r="3" fill="var(--amber)"/>
+
+            <g id="crane-rope-group">
+              <line x1="0" y1="50" x2="0" y2="108" stroke="var(--ink-secondary)" stroke-width="2"/>
+              <path d="M-5 108 h10 l3 8 h-16 z" fill="var(--iron)"/>
+              <!-- İndirilen Tuğla Blok -->
+              <rect x="-24" y="116" width="48" height="22" rx="3" fill="var(--brick-a)" stroke="rgba(30, 28, 25, 0.2)" stroke-width="1.2"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- Taş Zemin Tablası -->
+        <rect x="32" y="366" width="496" height="14" rx="4" fill="var(--border)"/>
+        <line x1="20" y1="380" x2="540" y2="380" stroke="var(--ink-secondary)" stroke-opacity="0.35" stroke-width="1.5"/>
+
+        <!-- Sol Zemin Yedek Tuğlalar & Harç Teknesi -->
+        <g aria-hidden="true">
+          <rect x="48" y="348" width="42" height="16" rx="2.5" fill="var(--brick-b)"/>
+          <rect x="94" y="348" width="42" height="16" rx="2.5" fill="var(--brick-a)"/>
+          <rect x="70" y="330" width="42" height="16" rx="2.5" fill="var(--brick-c)"/>
+          <path d="M148 335 H182 L177 366 H153 Z" fill="var(--iron)"/>
+          <ellipse cx="165" cy="335" rx="17" ry="4" fill="var(--mortar)"/>
+        </g>
+
+        <!-- ================================================================
+             SOL USTA İŞÇİ (Baretli, Deri Önlüklü, Mala Tutan)
+             ================================================================ -->
+        <g id="worker-left">
+          <rect x="118" y="292" width="16" height="74" rx="5" fill="var(--tunic-slate)"/>
+          <rect x="140" y="292" width="16" height="74" rx="5" fill="var(--tunic-slate)"/>
+          <path d="M116 358 h20 a4 4 0 0 1 4 4 v4 h-24 z" fill="var(--stone-dark)"/>
+          <path d="M138 358 h20 a4 4 0 0 1 4 4 v4 h-24 z" fill="var(--stone-dark)"/>
+
+          <!-- Gövde & Deri Önlük -->
+          <rect x="112" y="222" width="50" height="76" rx="12" fill="var(--tunic-canvas)"/>
+          <rect x="120" y="246" width="34" height="52" rx="4" fill="var(--leather)"/>
+          <rect x="122" y="222" width="6" height="26" rx="2" fill="var(--leather)"/>
+          <rect x="146" y="222" width="6" height="26" rx="2" fill="var(--leather)"/>
+
+          <!-- Baş & Pirinç Baret -->
+          <g id="worker-left-head">
+            <circle cx="139" cy="198" r="17" fill="var(--skin)"/>
+            <circle cx="146" cy="196" r="2" fill="var(--stone-dark)"/>
+            <path d="M143 204 q4 3 8 0" fill="none" stroke="var(--stone-dark)" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M120 192 c0 -13 38 -13 38 0 z" fill="var(--amber)"/>
+            <rect x="117" y="190" width="46" height="5" rx="2.5" fill="var(--amber)"/>
+          </g>
+
+          <!-- Mala Tutan Sağ Kol -->
+          <g id="worker-left-arm">
+            <path d="M152 234 L188 252 L206 242" fill="none" stroke="var(--tunic-canvas)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="208" cy="241" r="6.5" fill="var(--skin)"/>
+            <path d="M212 240 L232 232 L228 246 Z" fill="#A1A6AB" stroke="#5E6266" stroke-width="1"/>
+          </g>
+        </g>
+
+        <!-- ================================================================
+             MERKEZ: ÖRÜLEN TUĞLA DUVAR (JS İle Kat Kat İnşa Edilir)
+             ================================================================ -->
+        <g id="brick-wall-layer"></g>
+
+        <!-- Harç & Tuğla Tozu Partikülleri -->
+        <g id="dust-group" aria-hidden="true">
+          <circle class="dust-particle" cx="275" cy="240" r="3" fill="var(--mortar)" style="--dx: -11px;"/>
+          <circle class="dust-particle" cx="285" cy="238" r="2.5" fill="var(--mortar)" style="--dx: 8px;"/>
+          <circle class="dust-particle" cx="270" cy="244" r="2.2" fill="var(--accent)" style="--dx: 12px;"/>
+          <circle class="dust-particle" cx="280" cy="236" r="3.4" fill="var(--mortar)" style="--dx: -6px;"/>
+        </g>
+
+        <!-- ================================================================
+             SAĞ USTA İŞÇİ (Şakül ve Su Terazisi İle Hizalayan)
+             ================================================================ -->
+        <g id="worker-right">
+          <rect x="408" y="292" width="16" height="74" rx="5" fill="var(--tunic-slate)"/>
+          <rect x="430" y="292" width="16" height="74" rx="5" fill="var(--tunic-slate)"/>
+          <path d="M404 358 h20 a4 4 0 0 1 4 4 v4 h-24 z" fill="var(--stone-dark)"/>
+          <path d="M426 358 h20 a4 4 0 0 1 4 4 v4 h-24 z" fill="var(--stone-dark)"/>
+
+          <!-- Gövde -->
+          <rect x="402" y="222" width="50" height="76" rx="12" fill="var(--accent)"/>
+          <rect x="402" y="255" width="50" height="7" fill="var(--surface)" opacity="0.85"/>
+          <rect x="402" y="273" width="50" height="7" fill="var(--surface)" opacity="0.85"/>
+
+          <!-- Baş & Baret -->
+          <g id="worker-right-head">
+            <circle cx="424" cy="198" r="17" fill="var(--skin)"/>
+            <circle cx="416" cy="196" r="2" fill="var(--stone-dark)"/>
+            <path d="M412 204 q4 2 8 0" fill="none" stroke="var(--stone-dark)" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M405 192 c0 -13 38 -13 38 0 z" fill="#FAF8F3" stroke="var(--ink-secondary)" stroke-width="1"/>
+            <rect x="400" y="190" width="46" height="5" rx="2.5" fill="#FAF8F3" stroke="var(--ink-secondary)" stroke-width="1"/>
+          </g>
+
+          <!-- Şakül Tutan Sol Kol -->
+          <g id="worker-right-arm">
+            <path d="M410 234 L380 224 L362 224" fill="none" stroke="var(--accent)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="360" cy="224" r="6.5" fill="var(--skin)"/>
+            <g id="plumb-bob">
+              <line x1="360" y1="224" x2="360" y2="286" stroke="var(--ink-secondary)" stroke-width="1.2" stroke-dasharray="2 2"/>
+              <path d="M355 286 L365 286 L360 300 Z" fill="var(--amber)"/>
+            </g>
+          </g>
+        </g>
+      </svg>
+    </figure>
+
+    <!-- 2. Öğe: 'Yakında...' Başlık Yazısı -->
+    <h1 class="coming-soon-title">Yakında...</h1>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const wallLayer = document.getElementById('brick-wall-layer');
+      const craneCarriage = document.getElementById('crane-carriage');
+      const buildersSvg = document.getElementById('builders-svg');
+      const sceneFrame = document.getElementById('scene-frame');
+      const dustParticles = document.querySelectorAll('.dust-particle');
+
+      const ROWS = 7;
+      const COLS = 4;
+      const BRICK_W = 42;
+      const BRICK_H = 18;
+      const GAP_X = 4;
+      const GAP_Y = 4;
+      const START_X = 192;
+      const BASE_Y = 366 - BRICK_H;
+
+      const brickColors = ['var(--brick-a)', 'var(--brick-b)', 'var(--brick-c)'];
+      const bricks = [];
+      const mortarLines = [];
+
+      // Tuğla ve harç katmanlarını SVG sahnesine yerleştir
+      function initWall() {
+        const svgNS = 'http://www.w3.org/2000/svg';
+
+        for (let r = 0; r < ROWS; r++) {
+          const y = BASE_Y - r * (BRICK_H + GAP_Y);
+          const staggerX = (r % 2 === 1) ? 10 : 0;
+
+          const mortar = document.createElementNS(svgNS, 'rect');
+          mortar.setAttribute('x', START_X + staggerX);
+          mortar.setAttribute('y', y + BRICK_H);
+          mortar.setAttribute('width', COLS * (BRICK_W + GAP_X) - GAP_X);
+          mortar.setAttribute('height', GAP_Y);
+          mortar.setAttribute('rx', '1');
+          mortar.setAttribute('fill', 'var(--mortar)');
+          mortar.classList.add('mortar-line');
+          wallLayer.appendChild(mortar);
+          mortarLines.push(mortar);
+
+          for (let c = 0; c < COLS; c++) {
+            const x = START_X + staggerX + c * (BRICK_W + GAP_X);
+            const isKeystone = (r === 3 && (c === 1 || c === 2));
+            const brick = document.createElementNS(svgNS, 'rect');
+
+            brick.setAttribute('x', x);
+            brick.setAttribute('y', y);
+            brick.setAttribute('width', BRICK_W);
+            brick.setAttribute('height', BRICK_H);
+            brick.setAttribute('rx', '2.5');
+            brick.setAttribute('fill', isKeystone ? 'var(--brick-crest)' : brickColors[(r + c) % brickColors.length]);
+            brick.setAttribute('stroke', 'rgba(30, 28, 25, 0.16)');
+            brick.setAttribute('stroke-width', '1');
+            brick.classList.add('wall-brick');
+
+            wallLayer.appendChild(brick);
+            bricks.push({ el: brick, x, y });
+          }
+        }
+      }
+
+      function spawnMortarDust(x, y) {
+        dustParticles.forEach((p, idx) => {
+          p.setAttribute('cx', x + 14 + idx * 6);
+          p.setAttribute('cy', y + BRICK_H);
+          p.classList.remove('is-burst');
+          void p.offsetWidth;
+          p.classList.add('is-burst');
+        });
+      }
+
+      const TOTAL_BRICKS = ROWS * COLS;
+      const INITIAL_LAID = 10;
+      let laidCount = INITIAL_LAID;
+      let speedTimer = null;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function renderWall(withDust) {
+        bricks.forEach((item, index) => {
+          if (index < laidCount) {
+            item.el.classList.add('is-placed');
+          } else {
+            item.el.classList.remove('is-placed');
+          }
+        });
+
+        mortarLines.forEach((line, rowIdx) => {
+          if (laidCount > rowIdx * COLS) {
+            line.classList.add('is-visible');
+          } else {
+            line.classList.remove('is-visible');
+          }
+        });
+
+        // Vinç arabasını sıradaki tuğlanın üzerine hizala
+        const target = bricks[Math.min(laidCount, TOTAL_BRICKS - 1)];
+        if (target) {
+          const craneX = Math.max(210, Math.min(350, target.x + BRICK_W / 2));
+          craneCarriage.setAttribute('transform', `translate(${craneX}, 0)`);
+        }
+
+        if (withDust && laidCount > 0 && laidCount <= TOTAL_BRICKS) {
+          const last = bricks[laidCount - 1];
+          spawnMortarDust(last.x, last.y);
+        }
+      }
+
+      function stepConstruction() {
+        if (laidCount < TOTAL_BRICKS) {
+          laidCount += 1;
+        } else {
+          laidCount = INITIAL_LAID;
+        }
+        renderWall(!reducedMotion);
+      }
+
+      // Gizli dokunuş: Sahneye tıklandığında işçiler kısa süreliğine hızlanır
+      function boostBuilders() {
+        stepConstruction();
+        if (!reducedMotion) {
+          buildersSvg.classList.add('is-fast');
+          clearTimeout(speedTimer);
+          speedTimer = setTimeout(() => {
+            buildersSvg.classList.remove('is-fast');
+          }, 950);
+        }
+      }
+
+      initWall();
+
+      if (reducedMotion) {
+        laidCount = TOTAL_BRICKS;
+        renderWall(false);
+      } else {
+        renderWall(false);
+        setInterval(() => {
+          if (laidCount < TOTAL_BRICKS) {
+            laidCount += 1;
+            renderWall(true);
+          } else {
+            laidCount = INITIAL_LAID;
+            renderWall(false);
+          }
+        }, 2100);
+      }
+
+      sceneFrame.addEventListener('click', boostBuilders);
+      sceneFrame.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          boostBuilders();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
