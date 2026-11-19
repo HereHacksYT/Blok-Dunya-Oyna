@@ -1,24 +1,38 @@
-// Blokdünya Online sunucusu — node server.js  →  http://localhost:3000
+// Hem Blok Dünya Online (WebSocket) hem de Bedrock Kutu (SSE + YouTube) sunucusu
 const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
-const PORT = process.env.PORT || 3000, MAX = 4;
-const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789'; // karışan harfler yok
 
-// --- WEB SUNUCUSU (HTML, JPG, MP4 DOSYALARINI SUNAN KISIM) ---
+const PORT = process.env.PORT || 3000;
+const MAX = 4; // Blok Dünya Online max oyuncu
+const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789'; 
+
+// --- YOUTUBE CANLI SOHBET AYARLARI ---
+const KEY = process.env.YT_KEY, VIDEO = process.env.YT_VIDEO;
+const sseClients = new Set();
+const sseSend = (o) => { const d = `data: ${JSON.stringify(o)}\n\n`; sseClients.forEach((r) => r.write(d)); };
+
+// --- WEB SUNUCUSU (HTML, JPG, MP4, SSE) ---
 const srv = http.createServer((req, res) => {
-  // Sağlık kontrolü
+  const u = new URL(req.url, 'http://localhost');
+
+  // 1. YouTube Canlı Sohbet Bağlantısı (SSE)
+  if (u.pathname === '/events') {
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+    res.write(': ok\n\n'); sseClients.add(res); req.on('close', () => sseClients.delete(res)); return;
+  }
+  
+  // 2. Test Rotası (Bedrock Kutu için)
+  if (u.pathname === '/test') {
+    sseSend({ user: u.searchParams.get('user') || 'Test', text: u.searchParams.get('text') || 'tnt' });
+    return res.end('gönderildi');
+  }
+
+  // 3. Statik Dosya Sunucusu (HTML, MP4 vs.)
   if (req.url.startsWith('/saglik')) return res.end('ok');
-
-  // İstenen URL'yi al (Örn: / veya /oyna.html?g=blokdunya.html)
-  let reqUrl = req.url.split('?')[0]; // ? işaretinden sonrasını (parametreleri) temizle
-  
-  // Eğer kök dizin (/) isteniyorsa index.html göster
+  let reqUrl = req.url.split('?')[0];
   let filePath = path.join(__dirname, reqUrl === '/' ? 'index.html' : reqUrl);
-
-  // Dosya uzantısını bul (.html, .jpg, .mp4 vb.)
-  const extname = String(path.extname(filePath)).toLowerCase();
   
-  // Tarayıcıya gönderilecek içerik türleri
+  const extname = String(path.extname(filePath)).toLowerCase();
   const mimeTypes = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',
@@ -30,31 +44,27 @@ const srv = http.createServer((req, res) => {
     '.gif': 'image/gif',
     '.svg': 'image/svg+xml',
     '.ico': 'image/x-icon',
-    '.mp4': 'video/mp4' // <--- VİDEO DESTEĞİ EKLENDİ
+    '.mp4': 'video/mp4'
   };
   const contentType = mimeTypes[extname] || 'application/octet-stream';
 
-  // Dosyayı oku ve gönder
   fs.readFile(filePath, (error, content) => {
     if (error) {
-      // Eğer dosya bulunamazsa 404 hatası dön
       if (error.code === 'ENOENT') {
         res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end('<h1>404 - Dosya Bulunamadı</h1>', 'utf-8');
       } else {
-        // Başka bir sunucu hatası varsa
         res.writeHead(500);
         res.end('Sunucu Hatası: ' + error.code);
       }
     } else {
-      // Başarılıysa dosyayı gönder
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content, 'utf-8');
     }
   });
 });
 
-// --- ONLINE (WEBSOCKET) KISMI (BURAYA HİÇ DOKUNMADIK) ---
+// --- BLOK DÜNYA ONLINE (WEBSOCKET KISMI) ---
 const wss = new WebSocketServer({ server: srv }), rooms = new Map();
 let nid = 1;
 const newCode = () => { let c; do c = Array.from({ length: 4 }, () => AB[Math.random() * AB.length | 0]).join(''); while (rooms.has(c)); return c; };
@@ -72,7 +82,7 @@ wss.on('connection', w => {
     const r = room; room = null;
     r.p.delete(me.id);
     if (!r.p.size) return rooms.delete(r.c);
-    if (r.host === me.id) r.host = r.p.keys().next().value;     // kurucu çıkarsa sıradaki kurucu olur
+    if (r.host === me.id) r.host = r.p.keys().next().value;
     all(r, { t: 'left', id: me.id });
     all(r, { t: 'players', l: list(r) });
   };
@@ -107,4 +117,29 @@ wss.on('connection', w => {
 });
 
 setInterval(() => wss.clients.forEach(w => { if (!w.alive) return w.terminate(); w.alive = false; w.ping(); }), 15000);
-srv.listen(PORT, () => console.log('Blokdünya Online hazır → Port: ' + PORT));
+
+// --- YOUTUBE API DÖNGÜSÜ (BEDROCK KUTU) ---
+const api = 'https://www.googleapis.com/youtube/v3/';
+async function get(url) { const j = await (await fetch(url)).json(); if (j.error) throw new Error(j.error.message); return j; }
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function chat() {
+  if (!KEY || !VIDEO) return console.log('YT_KEY / YT_VIDEO verilmedi → sadece test modu (/test?text=tnt)');
+  try {
+    const v = await get(`${api}videos?part=liveStreamingDetails&id=${VIDEO}&key=${KEY}`);
+    const id = v.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
+    if (!id) throw new Error('Canlı sohbet bulunamadı (yayın canlı mı? video ID doğru mu?)');
+    console.log('YouTube sohbetine bağlandı ✔');
+    let token = '', first = true;
+    for (;;) {
+      const j = await get(`${api}liveChat/messages?liveChatId=${id}&part=snippet,authorDetails&key=${KEY}${token ? '&pageToken=' + token : ''}`);
+      token = j.nextPageToken;
+      if (!first) for (const m of j.items) { const t = m.snippet.displayMessage; if (t) sseSend({ user: m.authorDetails.displayName, text: t }); }
+      first = false; 
+      await wait(Math.max(j.pollingIntervalMillis || 5000, 5000));
+    }
+  } catch (e) { console.log('HATA:', e.message, '→ 15 sn sonra tekrar denenecek'); setTimeout(chat, 15000); }
+}
+chat();
+
+srv.listen(PORT, () => console.log('Blok Dünya & Bedrock Kutu sunucusu hazır → Port: ' + PORT));
