@@ -194,18 +194,17 @@
                 </div>
             </a>
 
-            <!-- 3. Oyun: BEDROCK KUTU (YENİ) -->
-            <a href="oyna.html?g=bedrock-kutu.html" class="game-card reveal" style="transition-delay: 400ms">
+            <!-- 3. Oyun: BEDROCK KUTU (Özel / Şifreli) -->
+            <a href="#" onclick="gizliOyun(event)" class="game-card reveal" style="transition-delay: 400ms">
                 <div class="thumb">
-                    <!-- Buraya bedrock-kutu.jpg adında bir önizleme resmi yüklemen gerekiyor -->
                     <img src="bedrock-kutu.jpg" alt="Bedrock Kutu Önizleme" loading="lazy" decoding="async" style="background-color: #121212;">
                 </div>
                 <div class="content">
-                    <h2>Bedrock Kutu</h2>
-                    <p>YouTube canlı sohbetinden gelen komutlarla zemini doldur ve 5 saniye koru!</p>
+                    <h2>Bedrock Kutu 🔒</h2>
+                    <p>Yayıncıya özel, YouTube canlı sohbet etkileşimli gizli mod.</p>
                     <span class="play-btn">
                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
-                        Oyna
+                        Şifre Gir ve Oyna
                     </span>
                 </div>
             </a>
@@ -282,6 +281,23 @@
             }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
             document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
         });
+
+        // Şifreli Oyun Girişi (Bedrock Kutu)
+        function gizliOyun(e) {
+            e.preventDefault();
+            const sifre = prompt("🔒 Bu oyun özeldir.\nLütfen yayıncı şifresini girin:");
+            if (!sifre) return;
+            
+            fetch('/api/login', { method: 'POST', body: sifre })
+                .then(res => {
+                    if (res.ok) {
+                        window.location.href = 'oyna.html?g=bedrock-kutu.html';
+                    } else {
+                        alert('❌ Hatalı şifre! Erişim reddedildi.');
+                    }
+                })
+                .catch(() => alert('Sunucuya bağlanılamadı.'));
+        }
     </script>
 </body>
 </html>
