@@ -4,90 +4,11 @@ const { WebSocketServer } = require('ws');
 const PORT = process.env.PORT || 3000;
 const MAX = 4; 
 const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789'; 
-const KEY = process.env.YT_KEY, VIDEO = process.env.YT_VIDEO;
-const OYUN_SIFRESI = 'bedrock2026'; // <-- BURAYI DEĞİŞTİREBİLİRSİN
+const KEY = process.env.YT_KEY; // Render'daki API Anahtarın
+const GAME_PASS = process.env.GAME_PASS || 'bedrock2026'; // Oyunun Şifresi
 
-// --- YOUTUBE API KISMI ---
-const sseClients = new Set();
-const api = 'https://www.googleapis.com/youtube/v3/';
-async function get(url) { const j = await (await fetch(url)).json(); if (j.error) throw new Error(j.error.message); return j; }
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function chat() {
-  if (!KEY || !VIDEO) return console.log('YT_KEY / YT_VIDEO verilmedi.');
-  try {
-    const v = await get(`${api}videos?part=liveStreamingDetails&id=${VIDEO}&key=${KEY}`);
-    const id = v.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
-    if (!id) throw new Error('Canlı sohbet bulunamadı');
-    console.log('YouTube sohbetine bağlandı ✔');
-    let token = '', first = true;
-    for (;;) {
-      const j = await get(`${api}liveChat/messages?liveChatId=${id}&part=snippet,authorDetails&key=${KEY}${token ? '&pageToken=' + token : ''}`);
-      token = j.nextPageToken;
-      if (!first) for (const m of j.items) {
-        const t = m.snippet.displayMessage;
-        if (t) { const payload = `data: ${JSON.stringify({ user: m.authorDetails.displayName, text: t })}\n\n`; sseClients.forEach(c => c.write(payload)); }
-      }
-      first = false; 
-      await wait(Math.max(j.pollingIntervalMillis || 5000, 5000)); 
-    }
-  } catch (e) { console.log('YT HATA:', e.message); setTimeout(chat, 15000); }
-}
-chat();
-
-// --- WEB SUNUCUSU ---
-const srv = http.createServer((req, res) => {
-  const u = new URL(req.url, 'http://localhost');
-
-  // Şifre Giriş Noktası
-  if (req.method === 'POST' && u.pathname === '/api/login') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      if (body === OYUN_SIFRESI) {
-        res.writeHead(200, { 'Set-Cookie': 'gizliOyunAuth=1; HttpOnly; Path=/', 'Content-Type': 'text/plain' });
-        res.end('OK');
-      } else {
-        res.writeHead(401); res.end('Hatalı Şifre');
-      }
-    });
-    return;
-  }
-
-  // Bedrock Kutu Güvenlik Duvarı
-  if (u.pathname === '/bedrock-kutu.html') {
-    const cookies = req.headers.cookie || '';
-    if (!cookies.includes('gizliOyunAuth=1')) {
-      res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end('<h1>403 Yasak</h1><p>Bu oyun özeldir, erişim yetkiniz yok.</p>');
-    }
-  }
-
-  // SSE (Sohbet)
-  if (u.pathname === '/events') {
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-    res.write(': ok\n\n'); sseClients.add(res); req.on('close', () => sseClients.delete(res)); return;
-  }
-
-  // Statik Dosyalar
-  if (req.url.startsWith('/saglik')) return res.end('ok');
-  let reqUrl = req.url.split('?')[0];
-  let filePath = path.join(__dirname, reqUrl === '/' ? 'index.html' : reqUrl);
-  const extname = String(path.extname(filePath)).toLowerCase();
-  const mimeTypes = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.mp4': 'video/mp4' };
-  const contentType = mimeTypes[extname] || 'application/octet-stream';
-
-  fs.readFile(filePath, (error, content) => {
-    if (error) {
-      if (error.code === 'ENOENT') { res.writeHead(404); res.end('404'); } else { res.writeHead(500); res.end('Hata'); }
-    } else {
-      res.writeHead(200, { 'Content-Type': contentType }); res.end(content, 'utf-8');
-    }
-  });
-});
-
-// --- BLOK DÜNYA ONLINE ---
-const wss = new WebSocketServer({ server: srv }), rooms = new Map();
+// --- BLOK DÜNYA ONLINE (WebSocket) ---
+const wss = new WebSocketServer({ noServer: true }), rooms = new Map();
 let nid = 1;
 const newCode = () => { let c; do c = Array.from({ length: 4 }, () => AB[Math.random() * AB.length | 0]).join(''); while (rooms.has(c)); return c; };
 const send = (w, o) => w.readyState === 1 && w.send(JSON.stringify(o));
@@ -116,6 +37,128 @@ wss.on('connection', w => {
   });
   w.on('close', leave); w.on('error', leave);
 });
-
 setInterval(() => wss.clients.forEach(w => { if (!w.alive) return w.terminate(); w.alive = false; w.ping(); }), 15000);
+
+// --- YOUTUBE CANLI SOHBET API ---
+let sseClients = new Set();
+let chatInterval = null;
+const api = 'https://www.googleapis.com/youtube/v3/';
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function fetchJson(url) { 
+  const res = await fetch(url); 
+  const data = await res.json(); 
+  if (data.error) throw new Error(data.error.message); 
+  return data; 
+}
+
+async function startYouTubeChat(videoId) {
+  if (!KEY) {
+    sseSend({ type: 'status', ok: false, text: 'API Anahtarı (YT_KEY) sunucuda tanımlı değil!' });
+    return;
+  }
+  if (chatInterval) clearTimeout(chatInterval);
+  
+  sseSend({ type: 'status', ok: true, text: 'YouTube sohbetine bağlanılıyor...' });
+
+  try {
+    // Video ID'den canlı sohbeti bul
+    const v = await fetchJson(`${api}videos?part=liveStreamingDetails&id=${videoId}&key=${KEY}`);
+    const chatId = v.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
+    if (!chatId) throw new Error('Canlı sohbet yok. Yayın açık mı veya ID doğru mu?');
+
+    sseSend({ type: 'status', ok: true, text: 'Sohbet Bağlandı ✔' });
+    let token = '', first = true;
+
+    const poll = async () => {
+      try {
+        const j = await fetchJson(`${api}liveChat/messages?liveChatId=${chatId}&part=snippet,authorDetails&key=${KEY}${token ? '&pageToken=' + token : ''}`);
+        token = j.nextPageToken;
+        
+        if (!first) {
+          for (const m of j.items) {
+            const t = m.snippet.displayMessage;
+            if (t) sseSend({ user: m.authorDetails.displayName, text: t });
+          }
+        }
+        first = false;
+        chatInterval = setTimeout(poll, Math.max(j.pollingIntervalMillis || 5000, 5000));
+      } catch (e) {
+        sseSend({ type: 'status', ok: false, text: 'Sohbet koptu, tekrar deneniyor...' });
+        chatInterval = setTimeout(poll, 10000);
+      }
+    };
+    poll();
+  } catch (e) {
+    sseSend({ type: 'status', ok: false, text: 'Hata: ' + e.message });
+  }
+}
+
+function sseSend(data) {
+  const payload = `data: ${JSON.stringify(data)}\n\n`;
+  sseClients.forEach(c => c.write(payload));
+}
+
+// --- WEB SUNUCUSU ---
+const srv = http.createServer((req, res) => {
+  const u = new URL(req.url, 'http://localhost');
+
+  // 1. Yayına Bağlanma Rotası
+  if (req.method === 'POST' && u.pathname === '/connect') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        if (data.pass !== GAME_PASS && data.pass !== '') {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ ok: false, error: 'Hatalı şifre!' }));
+        }
+        
+        let vid = data.video.trim();
+        // Link yapıştırıldıysa ID'yi ayıkla
+        if (vid.includes('youtube.com') || vid.includes('youtu.be')) {
+          const match = vid.match(/(?:v=|youtu\.be\/|live\/)([a-zA-Z0-9_-]{11})/);
+          if (match) vid = match[1];
+        }
+
+        startYouTubeChat(vid);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, video: vid }));
+      } catch (e) {
+        res.writeHead(400); res.end('Bad Request');
+      }
+    });
+    return;
+  }
+
+  // 2. SSE (Sunucudan Oyuna Veri Akışı)
+  if (u.pathname === '/events') {
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+    res.write(': ok\n\n'); sseClients.add(res); req.on('close', () => sseClients.delete(res)); return;
+  }
+
+  // 3. Statik Dosyalar (HTML, JPG, MP4)
+  if (req.url.startsWith('/saglik')) return res.end('ok');
+  let reqUrl = req.url.split('?')[0];
+  let filePath = path.join(__dirname, reqUrl === '/' ? 'index.html' : reqUrl);
+  
+  const extname = String(path.extname(filePath)).toLowerCase();
+  const mimeTypes = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.mp4': 'video/mp4' };
+  const contentType = mimeTypes[extname] || 'application/octet-stream';
+
+  fs.readFile(filePath, (error, content) => {
+    if (error) {
+      if (error.code === 'ENOENT') { res.writeHead(404); res.end('404'); } else { res.writeHead(500); res.end('Hata'); }
+    } else {
+      res.writeHead(200, { 'Content-Type': contentType }); res.end(content, 'utf-8');
+    }
+  });
+});
+
+// WebSocket'leri HTTP sunucusuna bağla
+srv.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, ws => { wss.emit('connection', ws, request); });
+});
+
 srv.listen(PORT, () => console.log('Sunucu Hazır → Port: ' + PORT));
