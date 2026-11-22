@@ -4,8 +4,74 @@ const { WebSocketServer } = require('ws');
 const PORT = process.env.PORT || 3000;
 const MAX = 4; 
 const AB = 'ABCDEFGHJKMNPRSTUVWXYZ23456789'; 
-const KEY = process.env.YT_KEY; // Render'daki API Anahtarın
+
+// --- YOUTUBE AYARLARI (Render'dan Çekilir) ---
+const KEY = process.env.YT_KEY;       // API Anahtarın
+const VIDEO = process.env.YT_VIDEO;   // Canlı Yayın ID'n
 const GAME_PASS = process.env.GAME_PASS || 'bedrock2026'; // Oyunun Şifresi
+
+// --- SSE İSTEMCİLERİ ---
+const sseClients = new Set();
+function sseSend(data) {
+  const payload = `data: ${JSON.stringify(data)}\n\n`;
+  sseClients.forEach(c => c.write(payload));
+}
+
+// --- YOUTUBE API DÖNGÜSÜ ---
+const api = 'https://www.googleapis.com/youtube/v3/';
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function getJson(url) { 
+  const res = await fetch(url); 
+  const data = await res.json(); 
+  if (data.error) throw new Error(data.error.message); 
+  return data; 
+}
+
+async function chatLoop() {
+  if (!KEY || !VIDEO) {
+    console.log('YT_KEY / YT_VIDEO eksik. YouTube bağlantısı yapılmadı.');
+    return;
+  }
+  
+  console.log('YouTube sohbetine bağlanılıyor...');
+  try {
+    const v = await getJson(`${api}videos?part=liveStreamingDetails&id=${VIDEO}&key=${KEY}`);
+    const chatId = v.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
+    if (!chatId) throw new Error('Canlı sohbet yok. Yayın açık mı?');
+
+    console.log('Sohbet bağlandı ✔');
+    sseSend({ type: 'status', ok: true, text: 'Sohbet bağlı ✔' });
+
+    let token = '', first = true;
+    for (;;) {
+      try {
+        const j = await getJson(`${api}liveChat/messages?liveChatId=${chatId}&part=snippet,authorDetails&key=${KEY}${token ? '&pageToken=' + token : ''}`);
+        token = j.nextPageToken;
+        
+        if (!first) {
+          for (const m of j.items) {
+            const t = m.snippet.displayMessage;
+            if (t) sseSend({ user: m.authorDetails.displayName, text: t });
+          }
+        }
+        first = false;
+        await wait(Math.max(j.pollingIntervalMillis || 5000, 5000));
+      } catch (e) {
+        console.log('YT API Hatası:', e.message);
+        sseSend({ type: 'status', ok: false, text: 'Sohbet koptu, tekrar deneniyor...' });
+        await wait(10000);
+      }
+    }
+  } catch (e) {
+    console.log('YT Başlatma Hatası:', e.message);
+    sseSend({ type: 'status', ok: false, text: e.message });
+    setTimeout(chatLoop, 15000); // 15 sn sonra tekrar dene
+  }
+}
+
+// Sunucu başlarken YouTube döngüsünü başlat
+setTimeout(chatLoop, 2000);
 
 // --- BLOK DÜNYA ONLINE (WebSocket) ---
 const wss = new WebSocketServer({ noServer: true }), rooms = new Map();
@@ -39,106 +105,50 @@ wss.on('connection', w => {
 });
 setInterval(() => wss.clients.forEach(w => { if (!w.alive) return w.terminate(); w.alive = false; w.ping(); }), 15000);
 
-// --- YOUTUBE CANLI SOHBET API ---
-let sseClients = new Set();
-let chatInterval = null;
-const api = 'https://www.googleapis.com/youtube/v3/';
-const wait = (ms) => new Promise(r => setTimeout(r, ms));
-
-async function fetchJson(url) { 
-  const res = await fetch(url); 
-  const data = await res.json(); 
-  if (data.error) throw new Error(data.error.message); 
-  return data; 
-}
-
-async function startYouTubeChat(videoId) {
-  if (!KEY) {
-    sseSend({ type: 'status', ok: false, text: 'API Anahtarı (YT_KEY) sunucuda tanımlı değil!' });
-    return;
-  }
-  if (chatInterval) clearTimeout(chatInterval);
-  
-  sseSend({ type: 'status', ok: true, text: 'YouTube sohbetine bağlanılıyor...' });
-
-  try {
-    // Video ID'den canlı sohbeti bul
-    const v = await fetchJson(`${api}videos?part=liveStreamingDetails&id=${videoId}&key=${KEY}`);
-    const chatId = v.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
-    if (!chatId) throw new Error('Canlı sohbet yok. Yayın açık mı veya ID doğru mu?');
-
-    sseSend({ type: 'status', ok: true, text: 'Sohbet Bağlandı ✔' });
-    let token = '', first = true;
-
-    const poll = async () => {
-      try {
-        const j = await fetchJson(`${api}liveChat/messages?liveChatId=${chatId}&part=snippet,authorDetails&key=${KEY}${token ? '&pageToken=' + token : ''}`);
-        token = j.nextPageToken;
-        
-        if (!first) {
-          for (const m of j.items) {
-            const t = m.snippet.displayMessage;
-            if (t) sseSend({ user: m.authorDetails.displayName, text: t });
-          }
-        }
-        first = false;
-        chatInterval = setTimeout(poll, Math.max(j.pollingIntervalMillis || 5000, 5000));
-      } catch (e) {
-        sseSend({ type: 'status', ok: false, text: 'Sohbet koptu, tekrar deneniyor...' });
-        chatInterval = setTimeout(poll, 10000);
-      }
-    };
-    poll();
-  } catch (e) {
-    sseSend({ type: 'status', ok: false, text: 'Hata: ' + e.message });
-  }
-}
-
-function sseSend(data) {
-  const payload = `data: ${JSON.stringify(data)}\n\n`;
-  sseClients.forEach(c => c.write(payload));
-}
-
-// --- WEB SUNUCUSU ---
+// --- WEB SUNUCUSU (Statik Dosyalar ve Şifre Koruması) ---
 const srv = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://localhost');
 
-  // 1. Yayına Bağlanma Rotası
-  if (req.method === 'POST' && u.pathname === '/connect') {
+  // 1. Bedrock Kutu Şifre Koruması (Sadece senin girebilmen için)
+  if (u.pathname === '/bedrock-kutu.html') {
+    const cookies = req.headers.cookie || '';
+    if (!cookies.includes('auth=ok')) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(`
+        <body style="background:#0b1220;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+          <div style="text-align:center;">
+            <h2>🔒 Bu oyun özeldir.</h2>
+            <p>Lütfen yayıncı şifresini girin:</p>
+            <input type="password" id="p" style="padding:10px;border-radius:5px;border:none;">
+            <button onclick="fetch('/auth', {method:'POST', body:document.getElementById('p').value}).then(r=>{if(r.ok)location.reload();else alert('Hatalı Şifre!')})" style="padding:10px;border-radius:5px;border:none;cursor:pointer;">Giriş</button>
+          </div>
+        </body>
+      `);
+    }
+  }
+
+  // 2. Şifre Kontrol Rotası
+  if (req.method === 'POST' && u.pathname === '/auth') {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', () => {
-      try {
-        const data = JSON.parse(body);
-        if (data.pass !== GAME_PASS && data.pass !== '') {
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ ok: false, error: 'Hatalı şifre!' }));
-        }
-        
-        let vid = data.video.trim();
-        // Link yapıştırıldıysa ID'yi ayıkla
-        if (vid.includes('youtube.com') || vid.includes('youtu.be')) {
-          const match = vid.match(/(?:v=|youtu\.be\/|live\/)([a-zA-Z0-9_-]{11})/);
-          if (match) vid = match[1];
-        }
-
-        startYouTubeChat(vid);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, video: vid }));
-      } catch (e) {
-        res.writeHead(400); res.end('Bad Request');
+      if (body === GAME_PASS) {
+        res.writeHead(200, { 'Set-Cookie': 'auth=ok; HttpOnly; Path=/' });
+        res.end('OK');
+      } else {
+        res.writeHead(401); res.end('Hatalı');
       }
     });
     return;
   }
 
-  // 2. SSE (Sunucudan Oyuna Veri Akışı)
+  // 3. SSE (Sunucudan Oyuna Veri Akışı)
   if (u.pathname === '/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     res.write(': ok\n\n'); sseClients.add(res); req.on('close', () => sseClients.delete(res)); return;
   }
 
-  // 3. Statik Dosyalar (HTML, JPG, MP4)
+  // 4. Statik Dosyalar (HTML, JPG, MP4)
   if (req.url.startsWith('/saglik')) return res.end('ok');
   let reqUrl = req.url.split('?')[0];
   let filePath = path.join(__dirname, reqUrl === '/' ? 'index.html' : reqUrl);
