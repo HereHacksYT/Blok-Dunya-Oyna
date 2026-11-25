@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Blok Dünya Oyna</title>
-    <meta name="description" content="Blok Dünya, Online Modu, Okul Macerası ve Bedrock Kutu oyunlarını tarayıcınızdan anında oynayın.">
+    <meta name="description" content="Blok Dünya, Online Modu ve Okul Macerası oyunlarını tarayıcınızdan anında oynayın.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -129,10 +129,32 @@
         footer {
             text-align: center; padding: var(--space-5) var(--space-3); border-top: 1px solid var(--border-color);
             color: var(--text-muted); font-size: 0.875rem; display: flex; flex-direction: column;
-            gap: var(--space-1); transition: border-color 0.4s var(--ease-out);
+            gap: var(--space-1); transition: border-color 0.4s var(--ease-out); align-items: center;
         }
         footer a { color: var(--text-main); text-decoration: none; font-weight: 500; transition: color 0.3s var(--ease-out); }
         footer a:hover { color: var(--accent-color); }
+
+        /* GitHub Butonu için Özel Stil */
+        .github-link {
+            display: inline-block;
+            margin-top: var(--space-3);
+            transition: transform 0.3s var(--ease-out);
+        }
+        .github-link:hover {
+            transform: translateY(-3px) scale(1.05);
+        }
+        .github-link img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: var(--shadow-sm);
+            border: 2px solid var(--border-color);
+            transition: border-color 0.3s var(--ease-out);
+        }
+        .github-link:hover img {
+            border-color: var(--accent-color);
+        }
 
         .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out); }
         .reveal.active { opacity: 1; transform: translateY(0); }
@@ -230,6 +252,12 @@
     <footer>
         <div>&copy; 2026 Blok Dünya Oyna. Tüm hakları saklıdır.</div>
         <div>Owner: <a href="https://youtube.com/@osmanburda" target="_blank" rel="noopener noreferrer">OsmanBurda</a></div>
+        
+        <!-- GITHUB REPO BAĞLANTISI -->
+        <a href="https://github.com/HereHacksYT/Blok-Dunya-Oyna/tree/main" class="github-link" target="_blank" rel="noopener noreferrer" title="GitHub Deposunu İncele">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTccG6M-hZIYQwl8n54UMHq_vHN2syqZ-GehxF6GNvSpA&s=10" alt="GitHub Repo">
+        </a>
+
     </footer>
 
     <script>
