@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Blok Dünya Oyna</title>
-    <meta name="description" content="Blok Dünya, Online Modu ve Bedrock Kutu oyunlarını tarayıcınızdan anında oynayın.">
+    <meta name="description" content="Blok Dünya, Online Modu, Okul Macerası ve Bedrock Kutu oyunlarını tarayıcınızdan anında oynayın.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -209,6 +209,21 @@
                 </div>
             </a>
 
+            <!-- 4. Oyun: BLOK DÜNYA OKUL (YENİ) -->
+            <a href="oyna.html?g=blokdunya-okul.html" class="game-card reveal" style="transition-delay: 500ms">
+                <div class="thumb">
+                    <img src="blokdunya-okul.jpg" alt="Blok Dünya Okul Önizleme" loading="lazy" decoding="async">
+                </div>
+                <div class="content">
+                    <h2>Blok Dünya: Okul</h2>
+                    <p>Okul temalı yeni maceraya atıl, keşfet ve kendi dünyanı inşa et.</p>
+                    <span class="play-btn">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
+                        Oyna
+                    </span>
+                </div>
+            </a>
+
         </section>
     </main>
 
@@ -288,7 +303,7 @@
             const sifre = prompt("🔒 Bu oyun özeldir.\nLütfen yayıncı şifresini girin:");
             if (!sifre) return;
             
-            fetch('/api/login', { method: 'POST', body: sifre })
+            fetch('/auth', { method: 'POST', body: sifre })
                 .then(res => {
                     if (res.ok) {
                         window.location.href = 'oyna.html?g=bedrock-kutu.html';
