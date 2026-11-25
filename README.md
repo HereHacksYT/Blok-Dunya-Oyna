@@ -1,41 +1,40 @@
 # 🌍 Blok Dünya Oyna
 
-Tarayıcı üzerinden hiçbir indirme gerektirmeden oynayabileceğiniz 3D blok (voxel) oyunları merkezi. 
+Modern, şık ve tamamen tarayıcı tabanlı 3D blok (voxel) oyunları koleksiyonu. İndirme gerektirmeden, anında oynanabilir!
 
-🚀 **Hemen Oynamak İçin:** [blok-dunya-oyna.onrender.com/](https://blok-dunya-oyna.onrender.com/)
+🚀 **Hemen Oynamak İçin:** [blok-dunya-oyna.onrender.com](https://blok-dunya-oyna.onrender.com/)
 
 ---
 
 ## 🎮 Oyunlar
 
-Sitede şu an oynanabilir 2 farklı mod bulunmaktadır:
+Sitede şu an oynanabilir **4 farklı mod** bulunmaktadır:
 
 *   🧱 **Blok Dünya:** Sonsuz bir küp dünyası. Kaynakları topla, hayatta kal veya yaratıcı modda sınırsız inşa et.
-*   🐻 **Blok Dünya: Ayı Haritası:** Yepyeni bir harita ve macera ile blok dünyasını farklı bir açıdan keşfet.
+*   🌐 **Blok Dünya: Online:** Arkadaşlarınla veya dünyanın dört bir yanından oyuncularla aynı haritada oyna. (WebSocket destekli 4 kişilik çok oyunculu mod).
+*   🔒 **Bedrock Kutu:** Yayıncıya özel, şifre korumalı gizli mod. YouTube canlı sohbetinden gelen komutlarla (TNT, Nuke, Creeper vb.) yayıncıya meydan okuyun!
+*   🏫 **Blok Dünya: Okul:** Yeni eklenen okul temalı harita ile keşfe çık, maceraya atıl.
 
 ## ✨ Özellikler
 
-*   📱 **Tam Mobil Uyumluluk:** Telefon ve tabletlerde (iOS/Safari dahil) sorunsuz oynanabilir.
-*   🔍 **Yakınlaştırma Koruması:** Ekrana çift tıklama veya parmakla yakınlaştırma (zoom) sorunları, özel `oyna.html` yönlendiricisi sayesinde tamamen engellenmiştir.
-*   ⚡ **Hızlı ve Hafif:** Herhangi bir uygulama indirmeye gerek kalmadan doğrudan tarayıcıda çalışır.
-*   🖥️ **Tam Ekran Deneyimi:** Oyunlar, dikkat dağıtıcı hiçbir öğe olmadan tam ekran iframe içerisinde açılır.
+*   🌓 **Aydınlık / Karanlık Mod:** Seçimlerinizi `localStorage` ile kaydeder, göz yormayan renk paletleri sunar.
+*   🎬 **Sinematik Açılış (Splash Screen):** Temanıza göre (aydınlık/karanlık) açılış videoları oynatılır.
+*   📺 **YouTube Canlı Sohbet Entegrasyonu:** Bedrock Kutu oyununda, YouTube API ve SSE (Server-Sent Events) kullanılarak canlı sohbet komutları doğrudan oyuna aktarılır.
+*   🛡️ **Güvenli ve Şifreli Oyun:** Bedrock Kutu moduna sadece yetkili kişiler (sunucu şifresiyle) erişebilir.
+*   📱 **Tam Mobil Uyumluluk:** Safari ve Chrome başta olmak üzere mobil cihazlarda (iOS/Android) çift tıklama yakınlaştırma sorunları özel olarak engellenmiştir.
+*   🎨 **Premium Tasarım (WYUW):** *Web Yapıcı Ultimate Warning* standartlarında; doğal renk tonları, pürüzsüz animasyonlar (cubic-bezier) ve erişilebilirlik (a11y) odaklı arayüz.
 
-## 👤 Geliştirici & Sahip
+## 🛠️ Kurulum ve Çalıştırma (Geliştiriciler İçin)
 
-*   **Owner:** [OsmanBurda](https://youtube.com/@osmanburda)
-*   Oyunlar ve projeler hakkında daha fazla içerik için YouTube kanalına göz atabilirsiniz.
+Projeyi kendi bilgisayarınızda çalıştırmak için Node.js yüklü olmalıdır.
 
-## 🛠️ Dosya Yapısı
+```bash
+# Depoyu klonlayın
+git clone https://github.com/HereHacksYT/Blok-Dunya-Oyna.git
+cd Blok-Dunya-Oyna
 
-Proje tamamen statik HTML, CSS ve JavaScript kullanılarak geliştirilmiştir. GitHub Pages üzerinde barındırılmaktadır.
+# Bağımlılıkları yükleyin
+npm install
 
-```text
-📁 Blok-Dunya-Oyna/
-├── index.html                     # Ana sayfa (Oyun seçim ekranı)
-├── oyna.html                      # Oyunları tam ekran ve kilitli zoom ile açan oynatıcı
-├── blokdunya.html                 # 1. Oyun (Blok Dünya)
-├── blokdunya_ayi_haritasi.html    # 2. Oyun (Ayı Haritası)
-├── blokdunya.jpg                  # 1. Oyunun kapak görseli
-├── blokdunyamodayiharitasi.jpg    # 2. Oyunun kapak görseli
-└── README.md                      # Bu dosya
-© 2026 Blok Dünya Oyna. Tüm hakları saklıdır.
+# Sunucuyu başlatın
+node server.js
