@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Blok Dünya Oyna</title>
-    <meta name="description" content="Blok Dünya, Online Modu ve Okul Macerası oyunlarını tarayıcınızdan anında oynayın.">
+    <meta name="description" content="Blok Dünya, Online Modu, Okul Macerası, Bedrock Kutu ve Hello Neighbor oyunlarını tarayıcınızdan anında oynayın.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,30 +134,54 @@
         footer a { color: var(--text-main); text-decoration: none; font-weight: 500; transition: color 0.3s var(--ease-out); }
         footer a:hover { color: var(--accent-color); }
 
-        /* GitHub Butonu için Özel Stil */
         .github-link {
             display: inline-block;
             margin-top: var(--space-3);
             transition: transform 0.3s var(--ease-out);
         }
-        .github-link:hover {
-            transform: translateY(-3px) scale(1.05);
-        }
+        .github-link:hover { transform: translateY(-3px) scale(1.05); }
         .github-link img {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: var(--shadow-sm);
-            border: 2px solid var(--border-color);
+            width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+            box-shadow: var(--shadow-sm); border: 2px solid var(--border-color);
             transition: border-color 0.3s var(--ease-out);
         }
-        .github-link:hover img {
-            border-color: var(--accent-color);
-        }
+        .github-link:hover img { border-color: var(--accent-color); }
 
         .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out); }
         .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* YENİ: HELLO NEIGHBOR UYARI MODALI (PENCERE) */
+        #modal-hn {
+            display: none; position: fixed; inset: 0; z-index: 10000;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-box {
+            background: var(--surface-color); color: var(--text-main);
+            padding: 32px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);
+            max-width: 500px; width: 100%; text-align: center; box-shadow: var(--shadow-md);
+            animation: popIn 0.3s var(--ease-out) both;
+        }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-box h2 { font-family: var(--font-heading); font-size: 1.8rem; margin-bottom: 12px; }
+        .modal-box p { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+        .modal-box strong { color: var(--text-main); }
+        .modal-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+        .btn-download {
+            padding: 12px 24px; background: var(--accent-color); color: #fff; text-decoration: none;
+            border-radius: 999px; font-weight: 600; transition: background 0.3s;
+        }
+        .btn-download:hover { background: var(--accent-hover); }
+        .btn-play {
+            padding: 12px 24px; background: var(--border-color); color: var(--text-main);
+            border: none; border-radius: 999px; font-weight: 600; cursor: pointer; font-family: var(--font-body);
+            transition: background 0.3s;
+        }
+        .btn-play:hover { background: var(--text-muted); color: #fff; }
+        .btn-close {
+            margin-top: 16px; background: none; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 0.85rem; text-decoration: underline; font-family: var(--font-body);
+        }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
@@ -187,7 +211,7 @@
         <section class="games-grid">
             
             <!-- 1. Oyun -->
-            <a href="oyna.html?g=blokdunya.html" class="game-card reveal" style="transition-delay: 200ms">
+            <a href="oyna.html?g=blokdunya.html" class="game-card reveal" style="transition-delay: 100ms">
                 <div class="thumb">
                     <img src="blokdunya.jpg" alt="Blok Dünya Oyunu Önizleme" loading="lazy" decoding="async">
                 </div>
@@ -202,7 +226,7 @@
             </a>
 
             <!-- 2. Oyun (Online Mod) -->
-            <a href="oyna.html?g=blokdunya_online.html" class="game-card reveal" style="transition-delay: 300ms">
+            <a href="oyna.html?g=blokdunya_online.html" class="game-card reveal" style="transition-delay: 200ms">
                 <div class="thumb">
                     <img src="blokdunyamodayiharitasi.jpg" alt="Blok Dünya Online Önizleme" loading="lazy" decoding="async">
                 </div>
@@ -217,7 +241,7 @@
             </a>
 
             <!-- 3. Oyun: BEDROCK KUTU (Özel / Şifreli) -->
-            <a href="#" onclick="gizliOyun(event)" class="game-card reveal" style="transition-delay: 400ms">
+            <a href="#" onclick="gizliOyun(event)" class="game-card reveal" style="transition-delay: 300ms">
                 <div class="thumb">
                     <img src="bedrock-kutu.jpg" alt="Bedrock Kutu Önizleme" loading="lazy" decoding="async" style="background-color: #121212;">
                 </div>
@@ -231,14 +255,29 @@
                 </div>
             </a>
 
-            <!-- 4. Oyun: BLOK DÜNYA OKUL (YENİ) -->
-            <a href="oyna.html?g=blokdunya-okul.html" class="game-card reveal" style="transition-delay: 500ms">
+            <!-- 4. Oyun: BLOK DÜNYA OKUL -->
+            <a href="oyna.html?g=blokdunya-okul.html" class="game-card reveal" style="transition-delay: 400ms">
                 <div class="thumb">
                     <img src="blokdunya-okul.jpg" alt="Blok Dünya Okul Önizleme" loading="lazy" decoding="async">
                 </div>
                 <div class="content">
                     <h2>Blok Dünya: Okul</h2>
                     <p>Okul temalı yeni maceraya atıl, keşfet ve kendi dünyanı inşa et.</p>
+                    <span class="play-btn">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
+                        Oyna
+                    </span>
+                </div>
+            </a>
+
+            <!-- 5. Oyun: HELLO NEIGHBOR (Uyarı Ekranlı) -->
+            <a href="#" onclick="helloNeighborUyari(event)" class="game-card reveal" style="transition-delay: 500ms">
+                <div class="thumb">
+                    <img src="hello-neighbor.jpg" alt="Hello Neighbor Önizleme" loading="lazy" decoding="async" onerror="this.src='blokdunya.jpg'">
+                </div>
+                <div class="content">
+                    <h2>Hello Neighbor</h2>
+                    <p>Gizemli komşunun evine sız, sırları ortaya çıkar ve hayatta kal.</p>
                     <span class="play-btn">
                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
                         Oyna
@@ -253,12 +292,23 @@
         <div>&copy; 2026 Blok Dünya Oyna. Tüm hakları saklıdır.</div>
         <div>Owner: <a href="https://youtube.com/@osmanburda" target="_blank" rel="noopener noreferrer">OsmanBurda</a></div>
         
-        <!-- GITHUB REPO BAĞLANTISI -->
         <a href="https://github.com/HereHacksYT/Blok-Dunya-Oyna/tree/main" class="github-link" target="_blank" rel="noopener noreferrer" title="GitHub Deposunu İncele">
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTccG6M-hZIYQwl8n54UMHq_vHN2syqZ-GehxF6GNvSpA&s=10" alt="GitHub Repo">
         </a>
-
     </footer>
+
+    <!-- HELLO NEIGHBOR MODAL (PENCERE) -->
+    <div id="modal-hn">
+        <div class="modal-box">
+            <h2>👋 Hello Neighbor</h2>
+            <p>Bu oyunun çalışabilmesi için <strong>.glb</strong> (3D model) dosyalarına ihtiyacı var.<br><br>Dosyalar 25 MB'tan büyük olduğu için ana depoya yüklenememiştir. Lütfen aşağıdaki butonu kullanarak dosyaları indirin.</p>
+            <div class="modal-buttons">
+                <a href="https://github.com/HereHacksYT/Blok-Dunya-Oyna/releases/tag/Update4" target="_blank" rel="noopener noreferrer" class="btn-download">📥 Dosyaları İndir</a>
+                <button onclick="document.getElementById('modal-hn').style.display='none'; window.location.href='oyna.html?g=hello-neighbor-blokdunya.html';" class="btn-play">İndirdim, Oyuna Gir</button>
+            </div>
+            <button onclick="document.getElementById('modal-hn').style.display='none';" class="btn-close">Kapat</button>
+        </div>
+    </div>
 
     <script>
         const root = document.documentElement;
@@ -340,6 +390,12 @@
                     }
                 })
                 .catch(() => alert('Sunucuya bağlanılamadı.'));
+        }
+
+        // Uyarı Ekranlı Oyun (Hello Neighbor)
+        function helloNeighborUyari(e) {
+            e.preventDefault();
+            document.getElementById('modal-hn').style.display = 'flex';
         }
     </script>
 </body>
